@@ -12,6 +12,7 @@ import {
 import AnnotatedText from '../components/AnnotatedText';
 import { AliyahData, fetchAliyah } from '../services/sefaria';
 import { getTodayAliyahIndices, getAliyahLabel, DAY_NAMES_EN } from '../utils/aliyah';
+import { cancelReminders, scheduleReminders } from '../services/notifications';
 import { isTodayRead, markTodayRead, unmarkTodayRead } from '../utils/storage';
 
 type DisplayMode = 'hebrew' | 'english' | 'both';
@@ -45,6 +46,8 @@ export default function HomeScreen() {
       ]);
       setDataList(results);
       setIsRead(read);
+      if (read) cancelReminders();
+      else scheduleReminders();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Something went wrong');
     } finally {
@@ -60,9 +63,11 @@ export default function HomeScreen() {
     if (isRead) {
       await unmarkTodayRead();
       setIsRead(false);
+      scheduleReminders();
     } else {
       await markTodayRead();
       setIsRead(true);
+      cancelReminders();
     }
   };
 
