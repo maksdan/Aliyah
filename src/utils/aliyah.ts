@@ -18,9 +18,19 @@ export const DAY_NAMES_EN = [
   'Shabbat',
 ];
 
-// JS getDay(): 0=Sun, 1=Mon, ..., 6=Sat → maps directly to aliyah 1–7 (index 0–6)
-export function getTodayAliyahIndex(): number {
-  return new Date().getDay();
+// Sun: 1st+2nd, Mon: 3rd, Tue: 4th, Wed: 5th, Thu: 6th, Fri: 7th, Shabbat: rest
+const DAY_TO_ALIYOT: number[][] = [
+  [0, 1], // Sunday
+  [2],    // Monday
+  [3],    // Tuesday
+  [4],    // Wednesday
+  [5],    // Thursday
+  [6],    // Friday
+  [],     // Shabbat
+];
+
+export function getTodayAliyahIndices(): number[] {
+  return DAY_TO_ALIYOT[new Date().getDay()];
 }
 
 export function getAliyahLabel(index: number): string {

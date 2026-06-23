@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import { AliyahData, fetchAliyah } from '../services/sefaria';
-import { getTodayAliyahIndex, getAliyahLabel, DAY_NAMES_EN } from '../utils/aliyah';
+import { getTodayAliyahIndices, getAliyahLabel, DAY_NAMES_EN } from '../utils/aliyah';
 import { isTodayRead, markTodayRead, unmarkTodayRead } from '../utils/storage';
 
 type DisplayMode = 'hebrew' | 'english' | 'both';
@@ -21,31 +21,33 @@ const MODES: { key: DisplayMode; label: string }[] = [
 ];
 
 export default function HomeScreen() {
-  const [data, setData] = useState<AliyahData | null>(null);
+  const [dataList, setDataList] = useState<AliyahData[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [mode, setMode] = useState<DisplayMode>('both');
   const [isRead, setIsRead] = useState(false);
 
-  const aliyahIndex = getTodayAliyahIndex();
-  const dayName = DAY_NAMES_EN[aliyahIndex];
+  const aliyahIndices = getTodayAliyahIndices();
+  const dayIndex = new Date().getDay();
+  const dayName = DAY_NAMES_EN[dayIndex];
+  const isShabbat = aliyahIndices.length === 0;
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const [result, read] = await Promise.all([
-        fetchAliyah(aliyahIndex),
+      const [results, read] = await Promise.all([
+        Promise.all(aliyahIndices.map((i) => fetchAliyah(i))),
         isTodayRead(),
       ]);
-      setData(result);
+      setDataList(results);
       setIsRead(read);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Something went wrong');
     } finally {
       setLoading(false);
     }
-  }, [aliyahIndex]);
+  }, [aliyahIndices.join(',')]);
 
   useEffect(() => {
     load();
@@ -81,22 +83,44 @@ export default function HomeScreen() {
     );
   }
 
-  if (!data) return null;
+  if (isShabbat) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.parashaHe}>שבת שלום</Text>
+          <Text style={styles.parashaEn}>Shabbat Shalom</Text>
+          <Text style={styles.aliyahLabel}>No aliyah today — enjoy your Shabbat!</Text>
+        </View>
+        <View style={styles.center}>
+          <Text style={styles.shabbatText}>Rest and recharge. Your next aliyah is on Sunday.</Text>
+        </View>
+      </View>
+    );
+  }
 
-  const readingMinutes = Math.max(1, Math.round(
-    data.verses.reduce((sum, v) => sum + v.en.trim().split(/\s+/).filter(Boolean).length, 0) / 200
-  ));
+  if (dataList.length === 0) return null;
+
+  const totalWords = dataList.reduce(
+    (sum, d) => sum + d.verses.reduce((s, v) => s + v.en.trim().split(/\s+/).filter(Boolean).length, 0),
+    0
+  );
+  const readingMinutes = Math.max(1, Math.round(totalWords / 200));
+
+  const headerData = dataList[0];
+  const aliyahLabels = dataList.map((d) => getAliyahLabel(d.aliyahIndex)).join('  +  ');
 
   return (
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.parashaHe}>{data.parashaHe}</Text>
-        <Text style={styles.parashaEn}>Parshat {data.parashaEn}</Text>
+        <Text style={styles.parashaHe}>{headerData.parashaHe}</Text>
+        <Text style={styles.parashaEn}>Parshat {headerData.parashaEn}</Text>
         <Text style={styles.aliyahLabel}>
-          {getAliyahLabel(data.aliyahIndex)} · {dayName}
+          {aliyahLabels} · {dayName}
         </Text>
-        <Text style={styles.refLabel}>{data.heRef}</Text>
+        <Text style={styles.refLabel}>
+          {dataList.map((d) => d.heRef).join(' · ')}
+        </Text>
       </View>
 
       {/* Language Toggle + Reading Time */}
@@ -121,16 +145,27 @@ export default function HomeScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {data.verses.map((verse, i) => (
-          <View key={i} style={styles.verseBlock}>
-            <Text style={styles.verseNumber}>{i + 1}</Text>
-            {(mode === 'hebrew' || mode === 'both') && (
-              <Text style={styles.hebrewText}>{verse.he}</Text>
+        {dataList.map((data, aliyahIdx) => (
+          <View key={aliyahIdx}>
+            {dataList.length > 1 && (
+              <View style={styles.aliyahDivider}>
+                <Text style={styles.aliyahDividerText}>
+                  {getAliyahLabel(data.aliyahIndex)}
+                </Text>
+              </View>
             )}
-            {(mode === 'english' || mode === 'both') && (
-              <Text style={styles.englishText}>{verse.en}</Text>
-            )}
-            {i < data.verses.length - 1 && <View style={styles.verseDivider} />}
+            {data.verses.map((verse, i) => (
+              <View key={`${aliyahIdx}-${i}`} style={styles.verseBlock}>
+                <Text style={styles.verseNumber}>{i + 1}</Text>
+                {(mode === 'hebrew' || mode === 'both') && (
+                  <Text style={styles.hebrewText}>{verse.he}</Text>
+                )}
+                {(mode === 'english' || mode === 'both') && (
+                  <Text style={styles.englishText}>{verse.en}</Text>
+                )}
+                {i < data.verses.length - 1 && <View style={styles.verseDivider} />}
+              </View>
+            ))}
           </View>
         ))}
       </ScrollView>
@@ -317,5 +352,25 @@ const styles = StyleSheet.create({
     color: MID,
     alignSelf: 'center',
     marginLeft: 4,
+  },
+  shabbatText: {
+    fontSize: 17,
+    color: MID,
+    textAlign: 'center',
+    lineHeight: 26,
+  },
+  aliyahDivider: {
+    borderTopWidth: 2,
+    borderTopColor: BROWN,
+    marginTop: 16,
+    marginBottom: 12,
+    paddingTop: 8,
+  },
+  aliyahDividerText: {
+    fontSize: 14,
+    color: BROWN,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: 8,
   },
 });

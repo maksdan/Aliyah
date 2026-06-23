@@ -1,6 +1,7 @@
 node_modules/
 .expo/
 .claude/
+.gh-config/
 dist/
 npm-debug.*
 *.jks
