@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -8,6 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import AnnotatedText from '../components/AnnotatedText';
 import { AliyahData, fetchAliyah } from '../services/sefaria';
 import { getTodayAliyahIndices, getAliyahLabel, DAY_NAMES_EN } from '../utils/aliyah';
 import { isTodayRead, markTodayRead, unmarkTodayRead } from '../utils/storage';
@@ -26,6 +28,7 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [mode, setMode] = useState<DisplayMode>('both');
   const [isRead, setIsRead] = useState(false);
+  const [glossaryWord, setGlossaryWord] = useState<{ word: string; definition: string } | null>(null);
 
   const aliyahIndices = getTodayAliyahIndices();
   const dayIndex = new Date().getDay();
@@ -156,12 +159,19 @@ export default function HomeScreen() {
             )}
             {data.verses.map((verse, i) => (
               <View key={`${aliyahIdx}-${i}`} style={styles.verseBlock}>
-                <Text style={styles.verseNumber}>{i + 1}</Text>
+                <View style={styles.verseNumberRow}>
+                  <Text style={styles.verseNumber}>{i + 1}</Text>
+                  <Text style={styles.verseRef}>{verse.ref}</Text>
+                </View>
                 {(mode === 'hebrew' || mode === 'both') && (
                   <Text style={styles.hebrewText}>{verse.he}</Text>
                 )}
                 {(mode === 'english' || mode === 'both') && (
-                  <Text style={styles.englishText}>{verse.en}</Text>
+                  <AnnotatedText
+                    text={verse.en}
+                    style={styles.englishText}
+                    onWordPress={(word, definition) => setGlossaryWord({ word, definition })}
+                  />
                 )}
                 {i < data.verses.length - 1 && <View style={styles.verseDivider} />}
               </View>
@@ -169,6 +179,21 @@ export default function HomeScreen() {
           </View>
         ))}
       </ScrollView>
+
+      {/* Glossary Popup */}
+      <Modal
+        visible={glossaryWord !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setGlossaryWord(null)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setGlossaryWord(null)}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalWord}>{glossaryWord?.word}</Text>
+            <Text style={styles.modalDefinition}>{glossaryWord?.definition}</Text>
+          </View>
+        </Pressable>
+      </Modal>
 
       {/* Mark as Read */}
       <View style={styles.footer}>
@@ -295,11 +320,22 @@ const styles = StyleSheet.create({
   verseBlock: {
     marginBottom: 4,
   },
+  verseNumberRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
   verseNumber: {
     fontSize: 11,
     color: '#B0926A',
     fontWeight: '600',
-    marginBottom: 4,
+    letterSpacing: 0.5,
+  },
+  verseRef: {
+    fontSize: 11,
+    color: '#B0926A',
+    fontWeight: '600',
     letterSpacing: 0.5,
   },
   hebrewText: {
@@ -372,5 +408,37 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textAlign: 'center',
     marginBottom: 8,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: PARCHMENT,
+    borderRadius: 12,
+    padding: 20,
+    marginHorizontal: 40,
+    maxWidth: 300,
+    borderWidth: 1,
+    borderColor: '#D4B896',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  modalWord: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: BROWN,
+    marginBottom: 8,
+    textTransform: 'capitalize',
+  },
+  modalDefinition: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: DARK,
   },
 });

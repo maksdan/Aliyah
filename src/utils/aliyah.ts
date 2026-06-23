@@ -1,11 +1,11 @@
 export const ALIYAH_NAMES_EN = [
   'First (Rishon)',
   'Second (Sheni)',
-  'Third (Shlishi)',
+  'Third (Shelishi)',
   'Fourth (Revi\'i)',
-  'Fifth (Chamishi)',
+  'Fifth (Ḥamishi)',
   'Sixth (Shishi)',
-  'Seventh (Shvi\'i)',
+  'Seventh (Shevi\'i)',
 ];
 
 export const DAY_NAMES_EN = [

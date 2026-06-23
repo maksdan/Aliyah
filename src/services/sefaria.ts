@@ -1,3 +1,5 @@
+import { transliterateNouns } from '../data/transliterations';
+
 const BASE = 'https://www.sefaria.org/api';
 
 export interface AliyahData {
@@ -5,7 +7,7 @@ export interface AliyahData {
   parashaHe: string;
   heRef: string;
   aliyahIndex: number;
-  verses: { he: string; en: string }[];
+  verses: { he: string; en: string; ref: string }[];
 }
 
 interface CalendarItem {
@@ -22,6 +24,36 @@ interface TextResponse {
   he: string | string[] | string[][];
   text: string | string[] | string[][];
   heRef: string;
+  sections: number[];
+  toSections: number[];
+}
+
+function buildVerseRefs(
+  raw: string | string[] | string[][],
+  sections: number[],
+): string[] {
+  if (!raw) return [];
+  if (typeof raw === 'string') return [`${sections[0]}:${sections[1]}`];
+
+  const arr = raw as (string | string[])[];
+  if (arr.length === 0) return [];
+
+  if (typeof arr[0] === 'string') {
+    const chapter = sections[0];
+    const startVerse = sections[1];
+    return (arr as string[]).map((_, i) => `${chapter}:${startVerse + i}`);
+  }
+
+  const nested = arr as string[][];
+  const refs: string[] = [];
+  nested.forEach((chapterVerses, chapterIdx) => {
+    const chapter = sections[0] + chapterIdx;
+    const startVerse = chapterIdx === 0 ? sections[1] : 1;
+    chapterVerses.forEach((_, verseIdx) => {
+      refs.push(`${chapter}:${startVerse + verseIdx}`);
+    });
+  });
+  return refs;
 }
 
 function flattenText(raw: string | string[] | string[][]): string[] {
@@ -35,8 +67,9 @@ function flattenText(raw: string | string[] | string[][]): string[] {
 
 function stripHtml(s: string): string {
   return s
-    .replace(/<[^>]*>/g, '')      // remove HTML tags (spans, br, small, etc.)
-    .replace(/\{[^}]*\}/g, '')    // remove Torah section markers: {ס} {פ}
+    .replace(/<br\s*\/?>/gi, ' ')           // <br> tags: always a word separator
+    .replace(/<[^>]*>/g, '')               // inline tags (spans, b, small, etc.): remove without space
+    .replace(/\{[^}]*\}/g, ' ')           // remove Torah section markers: {ס} {פ}
     .replace(/&nbsp;/g, ' ')
     .replace(/&amp;/g, '&')
     .replace(/&lt;/g, '<')
@@ -68,13 +101,15 @@ export async function fetchAliyah(aliyahIndex: number): Promise<AliyahData> {
   if (!textRes.ok) throw new Error('Could not load aliyah text from Sefaria');
   const textData: TextResponse = await textRes.json();
 
+  const verseRefs = buildVerseRefs(textData.text, textData.sections);
   const heVerses = flattenText(textData.he);
   const enVerses = flattenText(textData.text);
 
   const len = Math.max(heVerses.length, enVerses.length);
   const verses = Array.from({ length: len }, (_, i) => ({
     he: stripHtml(heVerses[i] ?? ''),
-    en: stripHtml(enVerses[i] ?? ''),
+    en: transliterateNouns(stripHtml(enVerses[i] ?? '')),
+    ref: verseRefs[i] ?? '',
   })).filter((v) => v.he || v.en);
 
   return {
