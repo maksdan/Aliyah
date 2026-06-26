@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Modal,
@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import AnnotatedText from '../components/AnnotatedText';
 import { AliyahData, fetchAliyah } from '../services/sefaria';
 import { getTodayAliyahIndices, getAliyahLabel, DAY_NAMES_EN } from '../utils/aliyah';
@@ -23,6 +24,22 @@ const MODES: { key: DisplayMode; label: string }[] = [
   { key: 'both', label: 'Both' },
 ];
 
+// Scripture is wrapped in guillemets « » rather than quotation marks so it can't
+// be confused with the speech quotes that appear inside the verses themselves.
+function buildShareText(
+  data: AliyahData,
+  verse: { he: string; en: string; ref: string },
+  mode: DisplayMode,
+): string {
+  const source = `${data.book} ${verse.ref}`.trim();
+  const lines: string[] = [];
+  if ((mode === 'hebrew' || mode === 'both') && verse.he) lines.push(verse.he);
+  if ((mode === 'english' || mode === 'both') && verse.en) lines.push(verse.en);
+  // A single pair of guillemets encloses the whole block, so in bilingual mode
+  // the Hebrew and English are wrapped together as one quotation.
+  return `«${lines.join('\n')}»\n— ${source}`;
+}
+
 export default function HomeScreen() {
   const [dataList, setDataList] = useState<AliyahData[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -30,6 +47,26 @@ export default function HomeScreen() {
   const [mode, setMode] = useState<DisplayMode>('both');
   const [isRead, setIsRead] = useState(false);
   const [glossaryWord, setGlossaryWord] = useState<{ word: string; definition: string } | null>(null);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const copiedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleCopyVerse = useCallback(
+    async (
+      data: AliyahData,
+      verse: { he: string; en: string; ref: string },
+      key: string,
+    ) => {
+      await Clipboard.setStringAsync(buildShareText(data, verse, mode));
+      setCopiedKey(key);
+      if (copiedTimer.current) clearTimeout(copiedTimer.current);
+      copiedTimer.current = setTimeout(() => setCopiedKey(null), 1500);
+    },
+    [mode],
+  );
+
+  useEffect(() => () => {
+    if (copiedTimer.current) clearTimeout(copiedTimer.current);
+  }, []);
 
   const aliyahIndices = getTodayAliyahIndices();
   const dayIndex = new Date().getDay();
@@ -166,7 +203,17 @@ export default function HomeScreen() {
               <View key={`${aliyahIdx}-${i}`} style={styles.verseBlock}>
                 <View style={styles.verseNumberRow}>
                   <Text style={styles.verseNumber}>{i + 1}</Text>
-                  <Text style={styles.verseRef}>{verse.ref}</Text>
+                  <View style={styles.verseMeta}>
+                    <Text style={styles.verseRef}>{verse.ref}</Text>
+                    <TouchableOpacity
+                      onPress={() => handleCopyVerse(data, verse, `${aliyahIdx}-${i}`)}
+                      hitSlop={8}
+                    >
+                      <Text style={styles.copyBtn}>
+                        {copiedKey === `${aliyahIdx}-${i}` ? '✓ Copied' : '⧉ Copy'}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
                 {(mode === 'hebrew' || mode === 'both') && (
                   <Text style={styles.hebrewText}>{verse.he}</Text>
@@ -342,6 +389,17 @@ const styles = StyleSheet.create({
     color: '#B0926A',
     fontWeight: '600',
     letterSpacing: 0.5,
+  },
+  verseMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  copyBtn: {
+    fontSize: 11,
+    color: BROWN,
+    fontWeight: '600',
+    letterSpacing: 0.3,
   },
   hebrewText: {
     fontFamily: 'NotoSerifHebrew_400Regular',

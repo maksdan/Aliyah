@@ -6,6 +6,7 @@ export interface AliyahData {
   parashaEn: string;
   parashaHe: string;
   heRef: string;
+  book: string;
   aliyahIndex: number;
   verses: { he: string; en: string; ref: string }[];
 }
@@ -24,6 +25,8 @@ interface TextResponse {
   he: string | string[] | string[][];
   text: string | string[] | string[][];
   heRef: string;
+  ref: string;
+  book: string;
   sections: number[];
   toSections: number[];
 }
@@ -65,8 +68,33 @@ function flattenText(raw: string | string[] | string[][]): string[] {
   return (arr as string[][]).flat();
 }
 
+// Quotation/apostrophe entities Sefaria's JPS text uses for speech. These must
+// be decoded to real characters BEFORE the catch-all entity removal below, or
+// quotation marks around dialogue would be silently deleted.
+const QUOTE_ENTITIES: Record<string, string> = {
+  '&ldquo;': '“', // " opening double — speech
+  '&rdquo;': '”', // " closing double — speech
+  '&lsquo;': '‘', // ' opening single — quote within a quote
+  '&rsquo;': '’', // ' closing single / apostrophe
+  '&quot;': '”',
+  '&apos;': '’',
+  '&#34;': '”',
+  '&#39;': '’',
+  '&#8216;': '‘',
+  '&#8217;': '’',
+  '&#8220;': '“',
+  '&#8221;': '”',
+};
+
+function decodeQuotes(s: string): string {
+  return s.replace(
+    /&(?:ldquo|rdquo|lsquo|rsquo|quot|apos|#34|#39|#8216|#8217|#8220|#8221);/g,
+    (m) => QUOTE_ENTITIES[m] ?? m,
+  );
+}
+
 function stripHtml(s: string): string {
-  return s
+  return decodeQuotes(s)
     .replace(/<br\s*\/?>/gi, ' ')           // <br> tags: always a word separator
     .replace(/<[^>]*>/g, '')               // inline tags (spans, b, small, etc.): remove without space
     .replace(/\{[^}]*\}/g, ' ')           // remove Torah section markers: {ס} {פ}
@@ -112,10 +140,15 @@ export async function fetchAliyah(aliyahIndex: number): Promise<AliyahData> {
     ref: verseRefs[i] ?? '',
   })).filter((v) => v.he || v.en);
 
+  // Book name for source attribution (e.g. "Deuteronomy"). Prefer the API's
+  // `book` field; fall back to stripping the chapter:verse range off `ref`.
+  const book = textData.book || (textData.ref ?? '').replace(/\s+\d+[:\d\s,.-]*$/, '').trim();
+
   return {
     parashaEn: parasha.displayValue.en,
     parashaHe: parasha.displayValue.he,
     heRef: textData.heRef,
+    book,
     aliyahIndex,
     verses,
   };
