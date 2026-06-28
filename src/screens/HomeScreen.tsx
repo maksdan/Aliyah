@@ -14,7 +14,6 @@ import AnnotatedText from '../components/AnnotatedText';
 import { DayReading, Verse, fetchTodayReading } from '../services/sefaria';
 import { Rite } from '../data/schedule';
 import { DAY_NAMES_EN, formatAliyotLabel } from '../utils/aliyah';
-import { getWeekday } from '../utils/today';
 import { cancelReminders, scheduleReminders } from '../services/notifications';
 import { isTodayRead, markTodayRead, unmarkTodayRead } from '../utils/storage';
 import { refreshWeeklyStreak } from '../utils/tracker';
@@ -46,7 +45,6 @@ function buildShareText(book: string, verse: Verse, mode: DisplayMode): string {
 
 export default function HomeScreen() {
   const [reading, setReading] = useState<DayReading | null>(null);
-  const [isShabbat, setIsShabbat] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [mode, setMode] = useState<DisplayMode>('both');
@@ -57,7 +55,7 @@ export default function HomeScreen() {
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const copiedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const dayName = DAY_NAMES_EN[getWeekday()];
+  const dayName = DAY_NAMES_EN[new Date().getDay()];
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -65,7 +63,6 @@ export default function HomeScreen() {
     try {
       const [result, read] = await Promise.all([fetchTodayReading(rite), isTodayRead()]);
       setReading(result);
-      setIsShabbat(result === null);
       setIsRead(read);
       if (result === null || read) cancelReminders();
       else scheduleReminders();
@@ -128,7 +125,7 @@ export default function HomeScreen() {
     );
   }
 
-  if (isShabbat || !reading) {
+  if (!reading) {
     return (
       <View style={styles.container}>
         <View style={styles.header}>

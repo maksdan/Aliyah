@@ -44,15 +44,6 @@ export function getParashaSchedule(parashaEn: string): ParashaSchedule | undefin
   return SCHEDULE[parashaEn];
 }
 
-// 0=Sunday … 5=Friday map to schedule entries; 6=Saturday (Shabbat) has none.
-export function getTodayScheduleDay(
-  parashaEn: string,
-  weekday: number = new Date().getDay(),
-): ScheduleDay | undefined {
-  if (weekday === 6) return undefined;
-  return getParashaSchedule(parashaEn)?.days[weekday];
-}
-
 export function isHaftarahDay(day: ScheduleDay | undefined): boolean {
   return !!day && day.aliyot.some((a) => typeof a === 'string');
 }

@@ -5,7 +5,6 @@ import {
   getParashaSchedule,
   isHaftarahDay,
 } from '../data/schedule';
-import { getWeekday } from '../utils/today';
 
 const BASE = 'https://www.sefaria.org/api';
 
@@ -189,7 +188,7 @@ async function fetchCurrentParasha(): Promise<{ en: string; he: string }> {
 // reading) or when the current parasha isn't in the schedule. `rite` only
 // affects the Friday Haftarah.
 export async function fetchTodayReading(rite: Rite): Promise<DayReading | null> {
-  const weekday = getWeekday();
+  const weekday = new Date().getDay();
   if (weekday === 6) return null; // Shabbat — no reading
 
   const parasha = await fetchCurrentParasha();
