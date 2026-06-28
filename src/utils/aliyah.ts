@@ -1,11 +1,11 @@
 export const ALIYAH_NAMES_EN = [
-  'First (Rishon)',
-  'Second (Sheni)',
-  'Third (Shelishi)',
-  'Fourth (Revi\'i)',
-  'Fifth (Ḥamishi)',
-  'Sixth (Shishi)',
-  'Seventh (Shevi\'i)',
+  'Rishon',
+  'Sheni',
+  'Shelishi',
+  "Revi'i",
+  'Ḥamishi',
+  'Shishi',
+  "Shevi'i",
 ];
 
 export const DAY_NAMES_EN = [
@@ -18,21 +18,17 @@ export const DAY_NAMES_EN = [
   'Shabbat',
 ];
 
-// Sun: 1st+2nd, Mon: 3rd, Tue: 4th, Wed: 5th, Thu: 6th, Fri: 7th, Shabbat: rest
-const DAY_TO_ALIYOT: number[][] = [
-  [0, 1], // Sunday
-  [2],    // Monday
-  [3],    // Tuesday
-  [4],    // Wednesday
-  [5],    // Thursday
-  [6],    // Friday
-  [],     // Shabbat
-];
+// Format a schedule day's aliyot list (1-based numbers, or 'Haftarah') into a
+// reader-facing label, e.g. "Aliyah 4 — Revi'i" or "Aliyot 2–3 — Sheni–Shelishi".
+export function formatAliyotLabel(aliyot: (number | string)[]): string {
+  const nums = aliyot.filter((a): a is number => typeof a === 'number');
+  if (nums.length === 0) return 'Haftarah';
 
-export function getTodayAliyahIndices(): number[] {
-  return DAY_TO_ALIYOT[new Date().getDay()];
-}
-
-export function getAliyahLabel(index: number): string {
-  return `Aliyah ${index + 1} — ${ALIYAH_NAMES_EN[index]}`;
+  const names = nums.map((n) => ALIYAH_NAMES_EN[n - 1]).filter(Boolean);
+  if (nums.length === 1) {
+    return `Aliyah ${nums[0]} — ${names[0]}`;
+  }
+  const first = nums[0];
+  const last = nums[nums.length - 1];
+  return `Aliyot ${first}–${last} — ${names.join('–')}`;
 }

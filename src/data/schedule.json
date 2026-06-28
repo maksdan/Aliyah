@@ -1,0 +1,782 @@
+{
+  "Bereshit": {
+    "parasha": "Bereshit",
+    "peakWeekday": 43,
+    "aliyahVerseCounts": [34, 16, 27, 21, 4, 28, 16],
+    "days": [
+      { "day": "Sunday", "aliyot": [1], "ref": "Genesis 1:1-2:3", "verses": 34 },
+      { "day": "Monday", "aliyot": [2, 3], "ref": "Genesis 2:4-3:21", "verses": 43 },
+      { "day": "Tuesday", "aliyot": [4, 5], "ref": "Genesis 3:22-4:22", "verses": 25 },
+      { "day": "Wednesday", "aliyot": [6], "ref": "Genesis 4:23-5:24", "verses": 28 },
+      { "day": "Thursday", "aliyot": [7], "ref": "Genesis 5:25-6:8", "verses": 16 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "Isaiah 42:5-43:10", "verses": 31 }
+    ]
+  },
+  "Noach": {
+    "parasha": "Noach",
+    "peakWeekday": 44,
+    "aliyahVerseCounts": [14, 16, 22, 15, 10, 44, 32],
+    "days": [
+      { "day": "Sunday", "aliyot": [1, 2], "ref": "Genesis 6:9-7:16", "verses": 30 },
+      { "day": "Monday", "aliyot": [3], "ref": "Genesis 7:17-8:14", "verses": 22 },
+      { "day": "Tuesday", "aliyot": [4, 5], "ref": "Genesis 8:15-9:17", "verses": 25 },
+      { "day": "Wednesday", "aliyot": [6], "ref": "Genesis 9:18-10:32", "verses": 44 },
+      { "day": "Thursday", "aliyot": [7], "ref": "Genesis 11:1-11:32", "verses": 32 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "Isaiah 54:1-55:5", "verses": 22 }
+    ]
+  },
+  "Lech-Lecha": {
+    "parasha": "Lech-Lecha",
+    "peakWeekday": 37,
+    "aliyahVerseCounts": [13, 11, 14, 20, 10, 37, 21],
+    "days": [
+      { "day": "Sunday", "aliyot": [1, 2], "ref": "Genesis 12:1-13:4", "verses": 24 },
+      { "day": "Monday", "aliyot": [3], "ref": "Genesis 13:5-13:18", "verses": 14 },
+      { "day": "Tuesday", "aliyot": [4, 5], "ref": "Genesis 14:1-15:6", "verses": 30 },
+      { "day": "Wednesday", "aliyot": [6], "ref": "Genesis 15:7-17:6", "verses": 37 },
+      { "day": "Thursday", "aliyot": [7], "ref": "Genesis 17:7-17:27", "verses": 21 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "Isaiah 40:27-41:16", "verses": 21 }
+    ]
+  },
+  "Vayera": {
+    "parasha": "Vayera",
+    "peakWeekday": 40,
+    "aliyahVerseCounts": [14, 19, 20, 40, 17, 13, 24],
+    "days": [
+      { "day": "Sunday", "aliyot": [1, 2], "ref": "Genesis 18:1-18:33", "verses": 33 },
+      { "day": "Monday", "aliyot": [3], "ref": "Genesis 19:1-19:20", "verses": 20 },
+      { "day": "Tuesday", "aliyot": [4], "ref": "Genesis 19:21-21:4", "verses": 40 },
+      { "day": "Wednesday", "aliyot": [5, 6], "ref": "Genesis 21:5-21:34", "verses": 30 },
+      { "day": "Thursday", "aliyot": [7], "ref": "Genesis 22:1-22:24", "verses": 24 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "II Kings 4:1-4:37", "verses": 37 }
+    ]
+  },
+  "Chayei Sara": {
+    "parasha": "Chayei Sara",
+    "peakWeekday": 29,
+    "aliyahVerseCounts": [16, 13, 17, 26, 15, 11, 7],
+    "days": [
+      { "day": "Sunday", "aliyot": [1, 2], "ref": "Genesis 23:1-24:9", "verses": 29 },
+      { "day": "Monday", "aliyot": [3], "ref": "Genesis 24:10-24:26", "verses": 17 },
+      { "day": "Tuesday", "aliyot": [4], "ref": "Genesis 24:27-24:52", "verses": 26 },
+      { "day": "Wednesday", "aliyot": [5], "ref": "Genesis 24:53-24:67", "verses": 15 },
+      { "day": "Thursday", "aliyot": [6, 7], "ref": "Genesis 25:1-25:18", "verses": 18 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "I Kings 1:1-1:31", "verses": 31 }
+    ]
+  },
+  "Toldot": {
+    "parasha": "Toldot",
+    "peakWeekday": 33,
+    "aliyahVerseCounts": [21, 7, 10, 7, 33, 23, 5],
+    "days": [
+      { "day": "Sunday", "aliyot": [1], "ref": "Genesis 25:19-26:5", "verses": 21 },
+      { "day": "Monday", "aliyot": [2], "ref": "Genesis 26:6-26:12", "verses": 7 },
+      { "day": "Tuesday", "aliyot": [3, 4], "ref": "Genesis 26:13-26:29", "verses": 17 },
+      { "day": "Wednesday", "aliyot": [5], "ref": "Genesis 26:30-27:27", "verses": 33 },
+      { "day": "Thursday", "aliyot": [6, 7], "ref": "Genesis 27:28-28:9", "verses": 28 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "Malachi 1:1-2:7", "verses": 21 }
+    ]
+  },
+  "Vayetzei": {
+    "parasha": "Vayetzei",
+    "peakWeekday": 41,
+    "aliyahVerseCounts": [13, 17, 31, 14, 32, 26, 15],
+    "days": [
+      { "day": "Sunday", "aliyot": [1, 2], "ref": "Genesis 28:10-29:17", "verses": 30 },
+      { "day": "Monday", "aliyot": [3], "ref": "Genesis 29:18-30:13", "verses": 31 },
+      { "day": "Tuesday", "aliyot": [4], "ref": "Genesis 30:14-30:27", "verses": 14 },
+      { "day": "Wednesday", "aliyot": [5], "ref": "Genesis 30:28-31:16", "verses": 32 },
+      { "day": "Thursday", "aliyot": [6, 7], "ref": "Genesis 31:17-32:3", "verses": 41 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "Hosea 12:13-14:10", "verses": 28 }
+    ]
+  },
+  "Vayishlach": {
+    "parasha": "Vayishlach",
+    "peakWeekday": 42,
+    "aliyahVerseCounts": [10, 17, 8, 15, 42, 37, 24],
+    "days": [
+      { "day": "Sunday", "aliyot": [1, 2], "ref": "Genesis 32:4-32:30", "verses": 27 },
+      { "day": "Monday", "aliyot": [3, 4], "ref": "Genesis 32:31-33:20", "verses": 23 },
+      { "day": "Tuesday", "aliyot": [5], "ref": "Genesis 34:1-35:11", "verses": 42 },
+      { "day": "Wednesday", "aliyot": [6], "ref": "Genesis 35:12-36:19", "verses": 37 },
+      { "day": "Thursday", "aliyot": [7], "ref": "Genesis 36:20-36:43", "verses": 24 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "Obadiah 1:1-1:21", "verses": 21 }
+    ]
+  },
+  "Vayeshev": {
+    "parasha": "Vayeshev",
+    "peakWeekday": 30,
+    "aliyahVerseCounts": [11, 11, 14, 30, 6, 17, 23],
+    "days": [
+      { "day": "Sunday", "aliyot": [1, 2], "ref": "Genesis 37:1-37:22", "verses": 22 },
+      { "day": "Monday", "aliyot": [3], "ref": "Genesis 37:23-37:36", "verses": 14 },
+      { "day": "Tuesday", "aliyot": [4], "ref": "Genesis 38:1-38:30", "verses": 30 },
+      { "day": "Wednesday", "aliyot": [5, 6], "ref": "Genesis 39:1-39:23", "verses": 23 },
+      { "day": "Thursday", "aliyot": [7], "ref": "Genesis 40:1-40:23", "verses": 23 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "Amos 2:6-3:8", "verses": 19 }
+    ]
+  },
+  "Miketz": {
+    "parasha": "Miketz",
+    "peakWeekday": 37,
+    "aliyahVerseCounts": [14, 24, 14, 23, 35, 14, 22],
+    "days": [
+      { "day": "Sunday", "aliyot": [1], "ref": "Genesis 41:1-41:14", "verses": 14 },
+      { "day": "Monday", "aliyot": [2], "ref": "Genesis 41:15-41:38", "verses": 24 },
+      { "day": "Tuesday", "aliyot": [3, 4], "ref": "Genesis 41:39-42:18", "verses": 37 },
+      { "day": "Wednesday", "aliyot": [5], "ref": "Genesis 42:19-43:15", "verses": 35 },
+      { "day": "Thursday", "aliyot": [6, 7], "ref": "Genesis 43:16-44:17", "verses": 36 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "I Kings 3:15-4:1", "verses": 15 }
+    ]
+  },
+  "Vayigash": {
+    "parasha": "Vayigash",
+    "peakWeekday": 28,
+    "aliyahVerseCounts": [13, 11, 11, 9, 28, 17, 17],
+    "days": [
+      { "day": "Sunday", "aliyot": [1, 2], "ref": "Genesis 44:18-45:7", "verses": 24 },
+      { "day": "Monday", "aliyot": [3, 4], "ref": "Genesis 45:8-45:27", "verses": 20 },
+      { "day": "Tuesday", "aliyot": [5], "ref": "Genesis 45:28-46:27", "verses": 28 },
+      { "day": "Wednesday", "aliyot": [6], "ref": "Genesis 46:28-47:10", "verses": 17 },
+      { "day": "Thursday", "aliyot": [7], "ref": "Genesis 47:11-47:27", "verses": 17 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "Ezekiel 37:15-37:28", "verses": 14 }
+    ]
+  },
+  "Vayechi": {
+    "parasha": "Vayechi",
+    "peakWeekday": 27,
+    "aliyahVerseCounts": [13, 7, 6, 18, 8, 27, 6],
+    "days": [
+      { "day": "Sunday", "aliyot": [1], "ref": "Genesis 47:28-48:9", "verses": 13 },
+      { "day": "Monday", "aliyot": [2, 3], "ref": "Genesis 48:10-48:22", "verses": 13 },
+      { "day": "Tuesday", "aliyot": [4, 5], "ref": "Genesis 49:1-49:26", "verses": 26 },
+      { "day": "Wednesday", "aliyot": [6], "ref": "Genesis 49:27-50:20", "verses": 27 },
+      { "day": "Thursday", "aliyot": [7], "ref": "Genesis 50:21-50:26", "verses": 6 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "I Kings 2:1-2:12", "verses": 12 }
+    ]
+  },
+  "Shemot": {
+    "parasha": "Shemot",
+    "peakWeekday": 32,
+    "aliyahVerseCounts": [17, 15, 15, 15, 24, 14, 24],
+    "days": [
+      { "day": "Sunday", "aliyot": [1, 2], "ref": "Exodus 1:1-2:10", "verses": 32 },
+      { "day": "Monday", "aliyot": [3, 4], "ref": "Exodus 2:11-3:15", "verses": 30 },
+      { "day": "Tuesday", "aliyot": [5], "ref": "Exodus 3:16-4:17", "verses": 24 },
+      { "day": "Wednesday", "aliyot": [6], "ref": "Exodus 4:18-4:31", "verses": 14 },
+      { "day": "Thursday", "aliyot": [7], "ref": "Exodus 5:1-6:1", "verses": 24 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "Isaiah 27:6-28:13; Isaiah 29:22-29:23", "verses": 23 }
+    ]
+  },
+  "Vaera": {
+    "parasha": "Vaera",
+    "peakWeekday": 36,
+    "aliyahVerseCounts": [12, 15, 9, 28, 12, 26, 19],
+    "days": [
+      { "day": "Sunday", "aliyot": [1, 2, 3], "ref": "Exodus 6:2-7:7", "verses": 36 },
+      { "day": "Monday", "aliyot": [4], "ref": "Exodus 7:8-8:6", "verses": 28 },
+      { "day": "Tuesday", "aliyot": [5], "ref": "Exodus 8:7-8:18", "verses": 12 },
+      { "day": "Wednesday", "aliyot": [6], "ref": "Exodus 8:19-9:16", "verses": 26 },
+      { "day": "Thursday", "aliyot": [7], "ref": "Exodus 9:17-9:35", "verses": 19 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "Ezekiel 28:25-29:21", "verses": 23 }
+    ]
+  },
+  "Bo": {
+    "parasha": "Bo",
+    "peakWeekday": 31,
+    "aliyahVerseCounts": [11, 12, 9, 27, 8, 23, 16],
+    "days": [
+      { "day": "Sunday", "aliyot": [1], "ref": "Exodus 10:1-10:11", "verses": 11 },
+      { "day": "Monday", "aliyot": [2, 3], "ref": "Exodus 10:12-11:3", "verses": 21 },
+      { "day": "Tuesday", "aliyot": [4], "ref": "Exodus 11:4-12:20", "verses": 27 },
+      { "day": "Wednesday", "aliyot": [5, 6], "ref": "Exodus 12:21-12:51", "verses": 31 },
+      { "day": "Thursday", "aliyot": [7], "ref": "Exodus 13:1-13:16", "verses": 16 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "Jeremiah 46:13-46:28", "verses": 16 }
+    ]
+  },
+  "Beshalach": {
+    "parasha": "Beshalach",
+    "peakWeekday": 32,
+    "aliyahVerseCounts": [14, 6, 11, 32, 11, 26, 16],
+    "days": [
+      { "day": "Sunday", "aliyot": [1, 2, 3], "ref": "Exodus 13:17-14:25", "verses": 31 },
+      { "day": "Monday", "aliyot": [4], "ref": "Exodus 14:26-15:26", "verses": 32 },
+      { "day": "Tuesday", "aliyot": [5], "ref": "Exodus 15:27-16:10", "verses": 11 },
+      { "day": "Wednesday", "aliyot": [6], "ref": "Exodus 16:11-16:36", "verses": 26 },
+      { "day": "Thursday", "aliyot": [7], "ref": "Exodus 17:1-17:16", "verses": 16 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "Judges 4:4-5:31", "verses": 52 }
+    ]
+  },
+  "Yitro": {
+    "parasha": "Yitro",
+    "peakWeekday": 20,
+    "aliyahVerseCounts": [12, 11, 4, 6, 13, 20, 9],
+    "days": [
+      { "day": "Sunday", "aliyot": [1], "ref": "Exodus 18:1-18:12", "verses": 12 },
+      { "day": "Monday", "aliyot": [2, 3], "ref": "Exodus 18:13-18:27", "verses": 15 },
+      { "day": "Tuesday", "aliyot": [4, 5], "ref": "Exodus 19:1-19:19", "verses": 19 },
+      { "day": "Wednesday", "aliyot": [6], "ref": "Exodus 19:20-20:14", "verses": 20 },
+      { "day": "Thursday", "aliyot": [7], "ref": "Exodus 20:15-20:23", "verses": 9 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "Isaiah 6:1-7:6; Isaiah 9:5-9:6", "verses": 21 }
+    ]
+  },
+  "Mishpatim": {
+    "parasha": "Mishpatim",
+    "peakWeekday": 29,
+    "aliyahVerseCounts": [19, 21, 23, 9, 14, 6, 26],
+    "days": [
+      { "day": "Sunday", "aliyot": [1], "ref": "Exodus 21:1-21:19", "verses": 19 },
+      { "day": "Monday", "aliyot": [2], "ref": "Exodus 21:20-22:3", "verses": 21 },
+      { "day": "Tuesday", "aliyot": [3], "ref": "Exodus 22:4-22:26", "verses": 23 },
+      { "day": "Wednesday", "aliyot": [4, 5, 6], "ref": "Exodus 22:27-23:25", "verses": 29 },
+      { "day": "Thursday", "aliyot": [7], "ref": "Exodus 23:26-24:18", "verses": 26 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "Jeremiah 34:8-34:22; Jeremiah 33:25-33:26", "verses": 17 }
+    ]
+  },
+  "Terumah": {
+    "parasha": "Terumah",
+    "peakWeekday": 24,
+    "aliyahVerseCounts": [16, 24, 14, 16, 7, 8, 11],
+    "days": [
+      { "day": "Sunday", "aliyot": [1], "ref": "Exodus 25:1-25:16", "verses": 16 },
+      { "day": "Monday", "aliyot": [2], "ref": "Exodus 25:17-25:40", "verses": 24 },
+      { "day": "Tuesday", "aliyot": [3], "ref": "Exodus 26:1-26:14", "verses": 14 },
+      { "day": "Wednesday", "aliyot": [4, 5], "ref": "Exodus 26:15-26:37", "verses": 23 },
+      { "day": "Thursday", "aliyot": [6, 7], "ref": "Exodus 27:1-27:19", "verses": 19 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "I Kings 5:26-6:13", "verses": 20 }
+    ]
+  },
+  "Tetzaveh": {
+    "parasha": "Tetzaveh",
+    "peakWeekday": 31,
+    "aliyahVerseCounts": [14, 18, 13, 18, 19, 9, 10],
+    "days": [
+      { "day": "Sunday", "aliyot": [1], "ref": "Exodus 27:20-28:12", "verses": 14 },
+      { "day": "Monday", "aliyot": [2], "ref": "Exodus 28:13-28:30", "verses": 18 },
+      { "day": "Tuesday", "aliyot": [3, 4], "ref": "Exodus 28:31-29:18", "verses": 31 },
+      { "day": "Wednesday", "aliyot": [5], "ref": "Exodus 29:19-29:37", "verses": 19 },
+      { "day": "Thursday", "aliyot": [6, 7], "ref": "Exodus 29:38-30:10", "verses": 19 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "Ezekiel 43:10-43:27", "verses": 18 }
+    ]
+  },
+  "Ki Tisa": {
+    "parasha": "Ki Tisa",
+    "peakWeekday": 47,
+    "aliyahVerseCounts": [45, 47, 5, 7, 9, 17, 9],
+    "days": [
+      { "day": "Sunday", "aliyot": [1], "ref": "Exodus 30:11-31:17", "verses": 45 },
+      { "day": "Monday", "aliyot": [2], "ref": "Exodus 31:18-33:11", "verses": 47 },
+      { "day": "Tuesday", "aliyot": [3, 4, 5], "ref": "Exodus 33:12-34:9", "verses": 21 },
+      { "day": "Wednesday", "aliyot": [6], "ref": "Exodus 34:10-34:26", "verses": 17 },
+      { "day": "Thursday", "aliyot": [7], "ref": "Exodus 34:27-34:35", "verses": 9 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "I Kings 18:1-18:39", "verses": 39 }
+    ]
+  },
+  "Vayakhel": {
+    "parasha": "Vayakhel",
+    "peakWeekday": 35,
+    "aliyahVerseCounts": [20, 9, 13, 12, 35, 13, 20],
+    "days": [
+      { "day": "Sunday", "aliyot": [1, 2], "ref": "Exodus 35:1-35:29", "verses": 29 },
+      { "day": "Monday", "aliyot": [3, 4], "ref": "Exodus 35:30-36:19", "verses": 25 },
+      { "day": "Tuesday", "aliyot": [5], "ref": "Exodus 36:20-37:16", "verses": 35 },
+      { "day": "Wednesday", "aliyot": [6], "ref": "Exodus 37:17-37:29", "verses": 13 },
+      { "day": "Thursday", "aliyot": [7], "ref": "Exodus 38:1-38:20", "verses": 20 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "I Kings 7:40-7:50", "verses": 11 }
+    ]
+  },
+  "Pekudei": {
+    "parasha": "Pekudei",
+    "peakWeekday": 22,
+    "aliyahVerseCounts": [12, 20, 11, 11, 16, 11, 11],
+    "days": [
+      { "day": "Sunday", "aliyot": [1], "ref": "Exodus 38:21-39:1", "verses": 12 },
+      { "day": "Monday", "aliyot": [2], "ref": "Exodus 39:2-39:21", "verses": 20 },
+      { "day": "Tuesday", "aliyot": [3, 4], "ref": "Exodus 39:22-39:43", "verses": 22 },
+      { "day": "Wednesday", "aliyot": [5], "ref": "Exodus 40:1-40:16", "verses": 16 },
+      { "day": "Thursday", "aliyot": [6, 7], "ref": "Exodus 40:17-40:38", "verses": 22 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "I Kings 7:51-8:21", "verses": 22 }
+    ]
+  },
+  "Vayikra": {
+    "parasha": "Vayikra",
+    "peakWeekday": 27,
+    "aliyahVerseCounts": [13, 10, 10, 17, 26, 19, 16],
+    "days": [
+      { "day": "Sunday", "aliyot": [1, 2], "ref": "Leviticus 1:1-2:6", "verses": 23 },
+      { "day": "Monday", "aliyot": [3, 4], "ref": "Leviticus 2:7-3:17", "verses": 27 },
+      { "day": "Tuesday", "aliyot": [5], "ref": "Leviticus 4:1-4:26", "verses": 26 },
+      { "day": "Wednesday", "aliyot": [6], "ref": "Leviticus 4:27-5:10", "verses": 19 },
+      { "day": "Thursday", "aliyot": [7], "ref": "Leviticus 5:11-5:26", "verses": 16 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "Isaiah 43:21-44:23", "verses": 31 }
+    ]
+  },
+  "Tzav": {
+    "parasha": "Tzav",
+    "peakWeekday": 28,
+    "aliyahVerseCounts": [11, 22, 28, 13, 8, 8, 7],
+    "days": [
+      { "day": "Sunday", "aliyot": [1], "ref": "Leviticus 6:1-6:11", "verses": 11 },
+      { "day": "Monday", "aliyot": [2], "ref": "Leviticus 6:12-7:10", "verses": 22 },
+      { "day": "Tuesday", "aliyot": [3], "ref": "Leviticus 7:11-7:38", "verses": 28 },
+      { "day": "Wednesday", "aliyot": [4, 5], "ref": "Leviticus 8:1-8:21", "verses": 21 },
+      { "day": "Thursday", "aliyot": [6, 7], "ref": "Leviticus 8:22-8:36", "verses": 15 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "Jeremiah 7:21-8:3; Jeremiah 9:22-9:23", "verses": 19 }
+    ]
+  },
+  "Shmini": {
+    "parasha": "Shmini",
+    "peakWeekday": 32,
+    "aliyahVerseCounts": [16, 7, 12, 4, 5, 32, 15],
+    "days": [
+      { "day": "Sunday", "aliyot": [1], "ref": "Leviticus 9:1-9:16", "verses": 16 },
+      { "day": "Monday", "aliyot": [2, 3], "ref": "Leviticus 9:17-10:11", "verses": 19 },
+      { "day": "Tuesday", "aliyot": [4, 5], "ref": "Leviticus 10:12-10:20", "verses": 9 },
+      { "day": "Wednesday", "aliyot": [6], "ref": "Leviticus 11:1-11:32", "verses": 32 },
+      { "day": "Thursday", "aliyot": [7], "ref": "Leviticus 11:33-11:47", "verses": 15 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "II Samuel 6:1-7:17", "verses": 40 }
+    ]
+  },
+  "Tazria": {
+    "parasha": "Tazria",
+    "peakWeekday": 18,
+    "aliyahVerseCounts": [13, 12, 6, 5, 11, 15, 5],
+    "days": [
+      { "day": "Sunday", "aliyot": [1], "ref": "Leviticus 12:1-13:5", "verses": 13 },
+      { "day": "Monday", "aliyot": [2, 3], "ref": "Leviticus 13:6-13:23", "verses": 18 },
+      { "day": "Tuesday", "aliyot": [4, 5], "ref": "Leviticus 13:24-13:39", "verses": 16 },
+      { "day": "Wednesday", "aliyot": [6], "ref": "Leviticus 13:40-13:54", "verses": 15 },
+      { "day": "Thursday", "aliyot": [7], "ref": "Leviticus 13:55-13:59", "verses": 5 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "II Kings 4:42-5:19", "verses": 22 }
+    ]
+  },
+  "Metzora": {
+    "parasha": "Metzora",
+    "peakWeekday": 21,
+    "aliyahVerseCounts": [12, 8, 12, 21, 19, 13, 5],
+    "days": [
+      { "day": "Sunday", "aliyot": [1], "ref": "Leviticus 14:1-14:12", "verses": 12 },
+      { "day": "Monday", "aliyot": [2, 3], "ref": "Leviticus 14:13-14:32", "verses": 20 },
+      { "day": "Tuesday", "aliyot": [4], "ref": "Leviticus 14:33-14:53", "verses": 21 },
+      { "day": "Wednesday", "aliyot": [5], "ref": "Leviticus 14:54-15:15", "verses": 19 },
+      { "day": "Thursday", "aliyot": [6, 7], "ref": "Leviticus 15:16-15:33", "verses": 18 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "II Kings 7:3-7:20", "verses": 18 }
+    ]
+  },
+  "Achrei Mot": {
+    "parasha": "Achrei Mot",
+    "peakWeekday": 21,
+    "aliyahVerseCounts": [17, 7, 10, 7, 14, 16, 9],
+    "days": [
+      { "day": "Sunday", "aliyot": [1], "ref": "Leviticus 16:1-16:17", "verses": 17 },
+      { "day": "Monday", "aliyot": [2, 3], "ref": "Leviticus 16:18-16:34", "verses": 17 },
+      { "day": "Tuesday", "aliyot": [4, 5], "ref": "Leviticus 17:1-18:5", "verses": 21 },
+      { "day": "Wednesday", "aliyot": [6], "ref": "Leviticus 18:6-18:21", "verses": 16 },
+      { "day": "Thursday", "aliyot": [7], "ref": "Leviticus 18:22-18:30", "verses": 9 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "Amos 9:7-9:15", "verses": 9 }
+    ]
+  },
+  "Kedoshim": {
+    "parasha": "Kedoshim",
+    "peakWeekday": 18,
+    "aliyahVerseCounts": [14, 8, 10, 5, 7, 15, 5],
+    "days": [
+      { "day": "Sunday", "aliyot": [1], "ref": "Leviticus 19:1-19:14", "verses": 14 },
+      { "day": "Monday", "aliyot": [2, 3], "ref": "Leviticus 19:15-19:32", "verses": 18 },
+      { "day": "Tuesday", "aliyot": [4, 5], "ref": "Leviticus 19:33-20:7", "verses": 12 },
+      { "day": "Wednesday", "aliyot": [6], "ref": "Leviticus 20:8-20:22", "verses": 15 },
+      { "day": "Thursday", "aliyot": [7], "ref": "Leviticus 20:23-20:27", "verses": 5 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "Ezekiel 22:1-22:19", "verses": 19 }
+    ]
+  },
+  "Emor": {
+    "parasha": "Emor",
+    "peakWeekday": 35,
+    "aliyahVerseCounts": [15, 25, 17, 22, 10, 12, 23],
+    "days": [
+      { "day": "Sunday", "aliyot": [1], "ref": "Leviticus 21:1-21:15", "verses": 15 },
+      { "day": "Monday", "aliyot": [2], "ref": "Leviticus 21:16-22:16", "verses": 25 },
+      { "day": "Tuesday", "aliyot": [3], "ref": "Leviticus 22:17-22:33", "verses": 17 },
+      { "day": "Wednesday", "aliyot": [4, 5], "ref": "Leviticus 23:1-23:32", "verses": 32 },
+      { "day": "Thursday", "aliyot": [6, 7], "ref": "Leviticus 23:33-24:23", "verses": 35 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "Ezekiel 44:15-44:31", "verses": 17 }
+    ]
+  },
+  "Behar": {
+    "parasha": "Behar",
+    "peakWeekday": 14,
+    "aliyahVerseCounts": [13, 5, 6, 4, 10, 8, 11],
+    "days": [
+      { "day": "Sunday", "aliyot": [1], "ref": "Leviticus 25:1-25:13", "verses": 13 },
+      { "day": "Monday", "aliyot": [2, 3], "ref": "Leviticus 25:14-25:24", "verses": 11 },
+      { "day": "Tuesday", "aliyot": [4, 5], "ref": "Leviticus 25:25-25:38", "verses": 14 },
+      { "day": "Wednesday", "aliyot": [6], "ref": "Leviticus 25:39-25:46", "verses": 8 },
+      { "day": "Thursday", "aliyot": [7], "ref": "Leviticus 25:47-26:2", "verses": 11 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "Jeremiah 32:6-32:27", "verses": 22 }
+    ]
+  },
+  "Bechukotai": {
+    "parasha": "Bechukotai",
+    "peakWeekday": 37,
+    "aliyahVerseCounts": [3, 4, 37, 15, 6, 7, 6],
+    "days": [
+      { "day": "Sunday", "aliyot": [1, 2], "ref": "Leviticus 26:3-26:9", "verses": 7 },
+      { "day": "Monday", "aliyot": [3], "ref": "Leviticus 26:10-26:46", "verses": 37 },
+      { "day": "Tuesday", "aliyot": [4], "ref": "Leviticus 27:1-27:15", "verses": 15 },
+      { "day": "Wednesday", "aliyot": [5], "ref": "Leviticus 27:16-27:21", "verses": 6 },
+      { "day": "Thursday", "aliyot": [6, 7], "ref": "Leviticus 27:22-27:34", "verses": 13 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "Jeremiah 16:19-17:14", "verses": 17 }
+    ]
+  },
+  "Bamidbar": {
+    "parasha": "Bamidbar",
+    "peakWeekday": 39,
+    "aliyahVerseCounts": [19, 35, 34, 13, 26, 12, 20],
+    "days": [
+      { "day": "Sunday", "aliyot": [1], "ref": "Numbers 1:1-1:19", "verses": 19 },
+      { "day": "Monday", "aliyot": [2], "ref": "Numbers 1:20-1:54", "verses": 35 },
+      { "day": "Tuesday", "aliyot": [3], "ref": "Numbers 2:1-2:34", "verses": 34 },
+      { "day": "Wednesday", "aliyot": [4, 5], "ref": "Numbers 3:1-3:39", "verses": 39 },
+      { "day": "Thursday", "aliyot": [6, 7], "ref": "Numbers 3:40-4:20", "verses": 32 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "Hosea 2:1-2:22", "verses": 22 }
+    ]
+  },
+  "Nasso": {
+    "parasha": "Nasso",
+    "peakWeekday": 48,
+    "aliyahVerseCounts": [17, 12, 10, 48, 41, 30, 18],
+    "days": [
+      { "day": "Sunday", "aliyot": [1, 2, 3], "ref": "Numbers 4:21-5:10", "verses": 39 },
+      { "day": "Monday", "aliyot": [4], "ref": "Numbers 5:11-6:27", "verses": 48 },
+      { "day": "Tuesday", "aliyot": [5], "ref": "Numbers 7:1-7:41", "verses": 41 },
+      { "day": "Wednesday", "aliyot": [6], "ref": "Numbers 7:42-7:71", "verses": 30 },
+      { "day": "Thursday", "aliyot": [7], "ref": "Numbers 7:72-7:89", "verses": 18 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "Judges 13:2-13:25", "verses": 24 }
+    ]
+  },
+  "Beha'alotcha": {
+    "parasha": "Beha'alotcha",
+    "peakWeekday": 33,
+    "aliyahVerseCounts": [14, 12, 14, 19, 24, 31, 22],
+    "days": [
+      { "day": "Sunday", "aliyot": [1, 2], "ref": "Numbers 8:1-8:26", "verses": 26 },
+      { "day": "Monday", "aliyot": [3, 4], "ref": "Numbers 9:1-10:10", "verses": 33 },
+      { "day": "Tuesday", "aliyot": [5], "ref": "Numbers 10:11-10:34", "verses": 24 },
+      { "day": "Wednesday", "aliyot": [6], "ref": "Numbers 10:35-11:29", "verses": 31 },
+      { "day": "Thursday", "aliyot": [7], "ref": "Numbers 11:30-12:16", "verses": 22 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "Zechariah 2:14-4:7", "verses": 21 }
+    ]
+  },
+  "Sh'lach": {
+    "parasha": "Sh'lach",
+    "peakWeekday": 34,
+    "aliyahVerseCounts": [20, 20, 18, 27, 9, 10, 15],
+    "days": [
+      { "day": "Sunday", "aliyot": [1], "ref": "Numbers 13:1-13:20", "verses": 20 },
+      { "day": "Monday", "aliyot": [2], "ref": "Numbers 13:21-14:7", "verses": 20 },
+      { "day": "Tuesday", "aliyot": [3], "ref": "Numbers 14:8-14:25", "verses": 18 },
+      { "day": "Wednesday", "aliyot": [4], "ref": "Numbers 14:26-15:7", "verses": 27 },
+      { "day": "Thursday", "aliyot": [5, 6, 7], "ref": "Numbers 15:8-15:41", "verses": 34 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "Joshua 2:1-2:24", "verses": 24 }
+    ]
+  },
+  "Korach": {
+    "parasha": "Korach",
+    "peakWeekday": 24,
+    "aliyahVerseCounts": [13, 6, 24, 7, 9, 24, 12],
+    "days": [
+      { "day": "Sunday", "aliyot": [1, 2], "ref": "Numbers 16:1-16:19", "verses": 19 },
+      { "day": "Monday", "aliyot": [3], "ref": "Numbers 16:20-17:8", "verses": 24 },
+      { "day": "Tuesday", "aliyot": [4, 5], "ref": "Numbers 17:9-17:24", "verses": 16 },
+      { "day": "Wednesday", "aliyot": [6], "ref": "Numbers 17:25-18:20", "verses": 24 },
+      { "day": "Thursday", "aliyot": [7], "ref": "Numbers 18:21-18:32", "verses": 12 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "I Samuel 11:14-12:22", "verses": 24 }
+    ]
+  },
+  "Chukat": {
+    "parasha": "Chukat",
+    "peakWeekday": 25,
+    "aliyahVerseCounts": [17, 11, 7, 8, 17, 11, 16],
+    "days": [
+      { "day": "Sunday", "aliyot": [1], "ref": "Numbers 19:1-19:17", "verses": 17 },
+      { "day": "Monday", "aliyot": [2, 3], "ref": "Numbers 19:18-20:13", "verses": 18 },
+      { "day": "Tuesday", "aliyot": [4, 5], "ref": "Numbers 20:14-21:9", "verses": 25 },
+      { "day": "Wednesday", "aliyot": [6], "ref": "Numbers 21:10-21:20", "verses": 11 },
+      { "day": "Thursday", "aliyot": [7], "ref": "Numbers 21:21-22:1", "verses": 16 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "Judges 11:1-11:33", "verses": 33 }
+    ]
+  },
+  "Balak": {
+    "parasha": "Balak",
+    "peakWeekday": 29,
+    "aliyahVerseCounts": [11, 8, 18, 15, 14, 17, 21],
+    "days": [
+      { "day": "Sunday", "aliyot": [1, 2], "ref": "Numbers 22:2-22:20", "verses": 19 },
+      { "day": "Monday", "aliyot": [3], "ref": "Numbers 22:21-22:38", "verses": 18 },
+      { "day": "Tuesday", "aliyot": [4, 5], "ref": "Numbers 22:39-23:26", "verses": 29 },
+      { "day": "Wednesday", "aliyot": [6], "ref": "Numbers 23:27-24:13", "verses": 17 },
+      { "day": "Thursday", "aliyot": [7], "ref": "Numbers 24:14-25:9", "verses": 21 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "Micah 5:6-6:8", "verses": 17 }
+    ]
+  },
+  "Pinchas": {
+    "parasha": "Pinchas",
+    "peakWeekday": 47,
+    "aliyahVerseCounts": [14, 47, 19, 18, 15, 27, 29],
+    "days": [
+      { "day": "Sunday", "aliyot": [1], "ref": "Numbers 25:10-26:4", "verses": 14 },
+      { "day": "Monday", "aliyot": [2], "ref": "Numbers 26:5-26:51", "verses": 47 },
+      { "day": "Tuesday", "aliyot": [3, 4], "ref": "Numbers 26:52-27:23", "verses": 37 },
+      { "day": "Wednesday", "aliyot": [5, 6], "ref": "Numbers 28:1-29:11", "verses": 42 },
+      { "day": "Thursday", "aliyot": [7], "ref": "Numbers 29:12-30:1", "verses": 29 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "I Kings 18:46-19:21", "verses": 22 }
+    ]
+  },
+  "Matot": {
+    "parasha": "Matot",
+    "peakWeekday": 29,
+    "aliyahVerseCounts": [16, 12, 12, 17, 13, 19, 23],
+    "days": [
+      { "day": "Sunday", "aliyot": [1, 2], "ref": "Numbers 30:2-31:12", "verses": 28 },
+      { "day": "Monday", "aliyot": [3, 4], "ref": "Numbers 31:13-31:41", "verses": 29 },
+      { "day": "Tuesday", "aliyot": [5], "ref": "Numbers 31:42-31:54", "verses": 13 },
+      { "day": "Wednesday", "aliyot": [6], "ref": "Numbers 32:1-32:19", "verses": 19 },
+      { "day": "Thursday", "aliyot": [7], "ref": "Numbers 32:20-32:42", "verses": 23 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "Jeremiah 1:1-2:3", "verses": 22 }
+    ]
+  },
+  "Masei": {
+    "parasha": "Masei",
+    "peakWeekday": 39,
+    "aliyahVerseCounts": [10, 39, 22, 14, 8, 26, 13],
+    "days": [
+      { "day": "Sunday", "aliyot": [1], "ref": "Numbers 33:1-33:10", "verses": 10 },
+      { "day": "Monday", "aliyot": [2], "ref": "Numbers 33:11-33:49", "verses": 39 },
+      { "day": "Tuesday", "aliyot": [3], "ref": "Numbers 33:50-34:15", "verses": 22 },
+      { "day": "Wednesday", "aliyot": [4, 5], "ref": "Numbers 34:16-35:8", "verses": 22 },
+      { "day": "Thursday", "aliyot": [6, 7], "ref": "Numbers 35:9-36:13", "verses": 39 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "Jeremiah 2:4-2:28; Jeremiah 3:4-3:4", "verses": 26 }
+    ]
+  },
+  "Devarim": {
+    "parasha": "Devarim",
+    "peakWeekday": 29,
+    "aliyahVerseCounts": [10, 11, 17, 9, 29, 21, 8],
+    "days": [
+      { "day": "Sunday", "aliyot": [1, 2], "ref": "Deuteronomy 1:1-1:21", "verses": 21 },
+      { "day": "Monday", "aliyot": [3, 4], "ref": "Deuteronomy 1:22-2:1", "verses": 26 },
+      { "day": "Tuesday", "aliyot": [5], "ref": "Deuteronomy 2:2-2:30", "verses": 29 },
+      { "day": "Wednesday", "aliyot": [6], "ref": "Deuteronomy 2:31-3:14", "verses": 21 },
+      { "day": "Thursday", "aliyot": [7], "ref": "Deuteronomy 3:15-3:22", "verses": 8 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "Isaiah 1:1-1:27", "verses": 27 }
+    ]
+  },
+  "Vaetchanan": {
+    "parasha": "Vaetchanan",
+    "peakWeekday": 36,
+    "aliyahVerseCounts": [11, 36, 9, 18, 15, 22, 11],
+    "days": [
+      { "day": "Sunday", "aliyot": [1], "ref": "Deuteronomy 3:23-4:4", "verses": 11 },
+      { "day": "Monday", "aliyot": [2], "ref": "Deuteronomy 4:5-4:40", "verses": 36 },
+      { "day": "Tuesday", "aliyot": [3, 4], "ref": "Deuteronomy 4:41-5:18", "verses": 27 },
+      { "day": "Wednesday", "aliyot": [5], "ref": "Deuteronomy 5:19-6:3", "verses": 15 },
+      { "day": "Thursday", "aliyot": [6, 7], "ref": "Deuteronomy 6:4-7:11", "verses": 33 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "Isaiah 40:1-40:26", "verses": 26 }
+    ]
+  },
+  "Eikev": {
+    "parasha": "Eikev",
+    "peakWeekday": 31,
+    "aliyahVerseCounts": [25, 13, 26, 11, 20, 12, 4],
+    "days": [
+      { "day": "Sunday", "aliyot": [1], "ref": "Deuteronomy 7:12-8:10", "verses": 25 },
+      { "day": "Monday", "aliyot": [2], "ref": "Deuteronomy 8:11-9:3", "verses": 13 },
+      { "day": "Tuesday", "aliyot": [3], "ref": "Deuteronomy 9:4-9:29", "verses": 26 },
+      { "day": "Wednesday", "aliyot": [4, 5], "ref": "Deuteronomy 10:1-11:9", "verses": 31 },
+      { "day": "Thursday", "aliyot": [6, 7], "ref": "Deuteronomy 11:10-11:25", "verses": 16 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "Isaiah 49:14-51:3", "verses": 27 }
+    ]
+  },
+  "Re'eh": {
+    "parasha": "Re'eh",
+    "peakWeekday": 35,
+    "aliyahVerseCounts": [17, 18, 22, 21, 8, 18, 22],
+    "days": [
+      { "day": "Sunday", "aliyot": [1, 2], "ref": "Deuteronomy 11:26-12:28", "verses": 35 },
+      { "day": "Monday", "aliyot": [3], "ref": "Deuteronomy 12:29-13:19", "verses": 22 },
+      { "day": "Tuesday", "aliyot": [4], "ref": "Deuteronomy 14:1-14:21", "verses": 21 },
+      { "day": "Wednesday", "aliyot": [5, 6], "ref": "Deuteronomy 14:22-15:18", "verses": 26 },
+      { "day": "Thursday", "aliyot": [7], "ref": "Deuteronomy 15:19-16:17", "verses": 22 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "Isaiah 54:11-55:5", "verses": 12 }
+    ]
+  },
+  "Shoftim": {
+    "parasha": "Shoftim",
+    "peakWeekday": 22,
+    "aliyahVerseCounts": [18, 7, 5, 8, 22, 17, 20],
+    "days": [
+      { "day": "Sunday", "aliyot": [1], "ref": "Deuteronomy 16:18-17:13", "verses": 18 },
+      { "day": "Monday", "aliyot": [2, 3, 4], "ref": "Deuteronomy 17:14-18:13", "verses": 20 },
+      { "day": "Tuesday", "aliyot": [5], "ref": "Deuteronomy 18:14-19:13", "verses": 22 },
+      { "day": "Wednesday", "aliyot": [6], "ref": "Deuteronomy 19:14-20:9", "verses": 17 },
+      { "day": "Thursday", "aliyot": [7], "ref": "Deuteronomy 20:10-21:9", "verses": 20 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "Isaiah 51:12-52:12", "verses": 24 }
+    ]
+  },
+  "Ki Teitzei": {
+    "parasha": "Ki Teitzei",
+    "peakWeekday": 29,
+    "aliyahVerseCounts": [12, 9, 29, 17, 6, 9, 28],
+    "days": [
+      { "day": "Sunday", "aliyot": [1, 2], "ref": "Deuteronomy 21:10-22:7", "verses": 21 },
+      { "day": "Monday", "aliyot": [3], "ref": "Deuteronomy 22:8-23:7", "verses": 29 },
+      { "day": "Tuesday", "aliyot": [4], "ref": "Deuteronomy 23:8-23:24", "verses": 17 },
+      { "day": "Wednesday", "aliyot": [5, 6], "ref": "Deuteronomy 23:25-24:13", "verses": 15 },
+      { "day": "Thursday", "aliyot": [7], "ref": "Deuteronomy 24:14-25:19", "verses": 28 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "Isaiah 54:1-54:10", "verses": 10 }
+    ]
+  },
+  "Ki Tavo": {
+    "parasha": "Ki Tavo",
+    "peakWeekday": 63,
+    "aliyahVerseCounts": [11, 4, 4, 10, 22, 63, 8],
+    "days": [
+      { "day": "Sunday", "aliyot": [1, 2], "ref": "Deuteronomy 26:1-26:15", "verses": 15 },
+      { "day": "Monday", "aliyot": [3, 4], "ref": "Deuteronomy 26:16-27:10", "verses": 14 },
+      { "day": "Tuesday", "aliyot": [5], "ref": "Deuteronomy 27:11-28:6", "verses": 22 },
+      { "day": "Wednesday", "aliyot": [6], "ref": "Deuteronomy 28:7-28:69", "verses": 63 },
+      { "day": "Thursday", "aliyot": [7], "ref": "Deuteronomy 29:1-29:8", "verses": 8 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "Isaiah 60:1-60:22", "verses": 22 }
+    ]
+  },
+  "Nitzavim": {
+    "parasha": "Nitzavim",
+    "peakWeekday": 14,
+    "aliyahVerseCounts": [3, 3, 14, 6, 4, 4, 6],
+    "days": [
+      { "day": "Sunday", "aliyot": [1, 2], "ref": "Deuteronomy 29:9-29:14", "verses": 6 },
+      { "day": "Monday", "aliyot": [3], "ref": "Deuteronomy 29:15-29:28", "verses": 14 },
+      { "day": "Tuesday", "aliyot": [4], "ref": "Deuteronomy 30:1-30:6", "verses": 6 },
+      { "day": "Wednesday", "aliyot": [5, 6], "ref": "Deuteronomy 30:7-30:14", "verses": 8 },
+      { "day": "Thursday", "aliyot": [7], "ref": "Deuteronomy 30:15-30:20", "verses": 6 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "Isaiah 61:10-63:9", "verses": 23 }
+    ]
+  },
+  "Vayeilech": {
+    "parasha": "Vayeilech",
+    "peakWeekday": 7,
+    "aliyahVerseCounts": [3, 3, 3, 4, 6, 5, 6],
+    "days": [
+      { "day": "Sunday", "aliyot": [1, 2], "ref": "Deuteronomy 31:1-31:6", "verses": 6 },
+      { "day": "Monday", "aliyot": [3, 4], "ref": "Deuteronomy 31:7-31:13", "verses": 7 },
+      { "day": "Tuesday", "aliyot": [5], "ref": "Deuteronomy 31:14-31:19", "verses": 6 },
+      { "day": "Wednesday", "aliyot": [6], "ref": "Deuteronomy 31:20-31:24", "verses": 5 },
+      { "day": "Thursday", "aliyot": [7], "ref": "Deuteronomy 31:25-31:30", "verses": 6 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "Isaiah 55:6-56:8", "verses": 16 }
+    ]
+  },
+  "Ha'azinu": {
+    "parasha": "Ha'azinu",
+    "peakWeekday": 13,
+    "aliyahVerseCounts": [6, 6, 6, 10, 11, 4, 9],
+    "days": [
+      { "day": "Sunday", "aliyot": [1], "ref": "Deuteronomy 32:1-32:6", "verses": 6 },
+      { "day": "Monday", "aliyot": [2, 3], "ref": "Deuteronomy 32:7-32:18", "verses": 12 },
+      { "day": "Tuesday", "aliyot": [4], "ref": "Deuteronomy 32:19-32:28", "verses": 10 },
+      { "day": "Wednesday", "aliyot": [5], "ref": "Deuteronomy 32:29-32:39", "verses": 11 },
+      { "day": "Thursday", "aliyot": [6, 7], "ref": "Deuteronomy 32:40-32:52", "verses": 13 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "II Samuel 22:1-22:51", "verses": 51 }
+    ]
+  },
+  "Vayakhel-Pekudei": {
+    "parasha": "Vayakhel-Pekudei",
+    "peakWeekday": 60,
+    "aliyahVerseCounts": [29, 60, 13, 32, 20, 22, 38],
+    "days": [
+      { "day": "Sunday", "aliyot": [1], "ref": "Exodus 35:1-35:29", "verses": 29 },
+      { "day": "Monday", "aliyot": [2], "ref": "Exodus 35:30-37:16", "verses": 60 },
+      { "day": "Tuesday", "aliyot": [3, 4], "ref": "Exodus 37:17-39:1", "verses": 45 },
+      { "day": "Wednesday", "aliyot": [5, 6], "ref": "Exodus 39:2-39:43", "verses": 42 },
+      { "day": "Thursday", "aliyot": [7], "ref": "Exodus 40:1-40:38", "verses": 38 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "I Kings 7:51-8:21", "verses": 22 }
+    ]
+  },
+  "Tazria-Metzora": {
+    "parasha": "Tazria-Metzora",
+    "peakWeekday": 40,
+    "aliyahVerseCounts": [31, 16, 15, 25, 12, 40, 18],
+    "days": [
+      { "day": "Sunday", "aliyot": [1], "ref": "Leviticus 12:1-13:23", "verses": 31 },
+      { "day": "Monday", "aliyot": [2, 3], "ref": "Leviticus 13:24-13:54", "verses": 31 },
+      { "day": "Tuesday", "aliyot": [4, 5], "ref": "Leviticus 13:55-14:32", "verses": 37 },
+      { "day": "Wednesday", "aliyot": [6], "ref": "Leviticus 14:33-15:15", "verses": 40 },
+      { "day": "Thursday", "aliyot": [7], "ref": "Leviticus 15:16-15:33", "verses": 18 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "II Kings 7:3-7:20", "verses": 18 }
+    ]
+  },
+  "Achrei Mot-Kedoshim": {
+    "parasha": "Achrei Mot-Kedoshim",
+    "peakWeekday": 41,
+    "aliyahVerseCounts": [24, 17, 30, 23, 18, 12, 20],
+    "days": [
+      { "day": "Sunday", "aliyot": [1, 2], "ref": "Leviticus 16:1-17:7", "verses": 41 },
+      { "day": "Monday", "aliyot": [3], "ref": "Leviticus 17:8-18:21", "verses": 30 },
+      { "day": "Tuesday", "aliyot": [4], "ref": "Leviticus 18:22-19:14", "verses": 23 },
+      { "day": "Wednesday", "aliyot": [5, 6], "ref": "Leviticus 19:15-20:7", "verses": 30 },
+      { "day": "Thursday", "aliyot": [7], "ref": "Leviticus 20:8-20:27", "verses": 20 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "Amos 9:7-9:15", "verses": 9 }
+    ]
+  },
+  "Behar-Bechukotai": {
+    "parasha": "Behar-Bechukotai",
+    "peakWeekday": 37,
+    "aliyahVerseCounts": [18, 10, 10, 26, 37, 15, 19],
+    "days": [
+      { "day": "Sunday", "aliyot": [1], "ref": "Leviticus 25:1-25:18", "verses": 18 },
+      { "day": "Monday", "aliyot": [2, 3], "ref": "Leviticus 25:19-25:38", "verses": 20 },
+      { "day": "Tuesday", "aliyot": [4], "ref": "Leviticus 25:39-26:9", "verses": 26 },
+      { "day": "Wednesday", "aliyot": [5], "ref": "Leviticus 26:10-26:46", "verses": 37 },
+      { "day": "Thursday", "aliyot": [6, 7], "ref": "Leviticus 27:1-27:34", "verses": 34 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "Jeremiah 16:19-17:14", "verses": 17 }
+    ]
+  },
+  "Chukat-Balak": {
+    "parasha": "Chukat-Balak",
+    "peakWeekday": 53,
+    "aliyahVerseCounts": [28, 15, 28, 27, 26, 29, 38],
+    "days": [
+      { "day": "Sunday", "aliyot": [1], "ref": "Numbers 19:1-20:6", "verses": 28 },
+      { "day": "Monday", "aliyot": [2, 3], "ref": "Numbers 20:7-21:20", "verses": 43 },
+      { "day": "Tuesday", "aliyot": [4, 5], "ref": "Numbers 21:21-22:38", "verses": 53 },
+      { "day": "Wednesday", "aliyot": [6], "ref": "Numbers 22:39-23:26", "verses": 29 },
+      { "day": "Thursday", "aliyot": [7], "ref": "Numbers 23:27-25:9", "verses": 38 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "Micah 5:6-6:8", "verses": 17 }
+    ]
+  },
+  "Matot-Masei": {
+    "parasha": "Matot-Masei",
+    "peakWeekday": 72,
+    "aliyahVerseCounts": [28, 42, 19, 72, 22, 22, 39],
+    "days": [
+      { "day": "Sunday", "aliyot": [1], "ref": "Numbers 30:2-31:12", "verses": 28 },
+      { "day": "Monday", "aliyot": [2, 3], "ref": "Numbers 31:13-32:19", "verses": 61 },
+      { "day": "Tuesday", "aliyot": [4], "ref": "Numbers 32:20-33:49", "verses": 72 },
+      { "day": "Wednesday", "aliyot": [5, 6], "ref": "Numbers 33:50-35:8", "verses": 44 },
+      { "day": "Thursday", "aliyot": [7], "ref": "Numbers 35:9-36:13", "verses": 39 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "Jeremiah 2:4-2:28; Jeremiah 3:4-3:4", "verses": 26 }
+    ]
+  },
+  "Nitzavim-Vayeilech": {
+    "parasha": "Nitzavim-Vayeilech",
+    "peakWeekday": 20,
+    "aliyahVerseCounts": [20, 6, 8, 12, 7, 6, 11],
+    "days": [
+      { "day": "Sunday", "aliyot": [1], "ref": "Deuteronomy 29:9-29:28", "verses": 20 },
+      { "day": "Monday", "aliyot": [2, 3], "ref": "Deuteronomy 30:1-30:14", "verses": 14 },
+      { "day": "Tuesday", "aliyot": [4], "ref": "Deuteronomy 30:15-31:6", "verses": 12 },
+      { "day": "Wednesday", "aliyot": [5, 6], "ref": "Deuteronomy 31:7-31:19", "verses": 13 },
+      { "day": "Thursday", "aliyot": [7], "ref": "Deuteronomy 31:20-31:30", "verses": 11 },
+      { "day": "Friday", "aliyot": ["Haftarah"], "ref": "Isaiah 61:10-63:9", "verses": 23 }
+    ]
+  }
+}

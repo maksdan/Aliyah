@@ -11,10 +11,13 @@ import {
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import AnnotatedText from '../components/AnnotatedText';
-import { AliyahData, fetchAliyah } from '../services/sefaria';
-import { getTodayAliyahIndices, getAliyahLabel, DAY_NAMES_EN } from '../utils/aliyah';
+import { DayReading, Verse, fetchTodayReading } from '../services/sefaria';
+import { Rite } from '../data/schedule';
+import { DAY_NAMES_EN, formatAliyotLabel } from '../utils/aliyah';
+import { getWeekday } from '../utils/today';
 import { cancelReminders, scheduleReminders } from '../services/notifications';
 import { isTodayRead, markTodayRead, unmarkTodayRead } from '../utils/storage';
+import { refreshWeeklyStreak } from '../utils/tracker';
 
 type DisplayMode = 'hebrew' | 'english' | 'both';
 
@@ -24,77 +27,73 @@ const MODES: { key: DisplayMode; label: string }[] = [
   { key: 'both', label: 'Both' },
 ];
 
+const RITES: { key: Rite; label: string }[] = [
+  { key: 'ashkenazi', label: 'Ashkenazi' },
+  { key: 'sephardi', label: 'Sephardi' },
+];
+
 // Scripture is wrapped in guillemets « » rather than quotation marks so it can't
 // be confused with the speech quotes that appear inside the verses themselves.
-function buildShareText(
-  data: AliyahData,
-  verse: { he: string; en: string; ref: string },
-  mode: DisplayMode,
-): string {
-  const source = `${data.book} ${verse.ref}`.trim();
+// A single pair wraps the whole block, so in bilingual mode the Hebrew and
+// English are wrapped together as one quotation.
+function buildShareText(book: string, verse: Verse, mode: DisplayMode): string {
+  const source = `${book} ${verse.ref}`.trim();
   const lines: string[] = [];
   if ((mode === 'hebrew' || mode === 'both') && verse.he) lines.push(verse.he);
   if ((mode === 'english' || mode === 'both') && verse.en) lines.push(verse.en);
-  // A single pair of guillemets encloses the whole block, so in bilingual mode
-  // the Hebrew and English are wrapped together as one quotation.
   return `«${lines.join('\n')}»\n— ${source}`;
 }
 
 export default function HomeScreen() {
-  const [dataList, setDataList] = useState<AliyahData[]>([]);
+  const [reading, setReading] = useState<DayReading | null>(null);
+  const [isShabbat, setIsShabbat] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [mode, setMode] = useState<DisplayMode>('both');
+  const [rite, setRite] = useState<Rite>('ashkenazi');
   const [isRead, setIsRead] = useState(false);
+  const [streak, setStreak] = useState(0);
   const [glossaryWord, setGlossaryWord] = useState<{ word: string; definition: string } | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const copiedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const dayName = DAY_NAMES_EN[getWeekday()];
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [result, read] = await Promise.all([fetchTodayReading(rite), isTodayRead()]);
+      setReading(result);
+      setIsShabbat(result === null);
+      setIsRead(read);
+      if (result === null || read) cancelReminders();
+      else scheduleReminders();
+      setStreak(await refreshWeeklyStreak());
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Something went wrong');
+    } finally {
+      setLoading(false);
+    }
+  }, [rite]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  useEffect(() => () => {
+    if (copiedTimer.current) clearTimeout(copiedTimer.current);
+  }, []);
+
   const handleCopyVerse = useCallback(
-    async (
-      data: AliyahData,
-      verse: { he: string; en: string; ref: string },
-      key: string,
-    ) => {
-      await Clipboard.setStringAsync(buildShareText(data, verse, mode));
+    async (book: string, verse: Verse, key: string) => {
+      await Clipboard.setStringAsync(buildShareText(book, verse, mode));
       setCopiedKey(key);
       if (copiedTimer.current) clearTimeout(copiedTimer.current);
       copiedTimer.current = setTimeout(() => setCopiedKey(null), 1500);
     },
     [mode],
   );
-
-  useEffect(() => () => {
-    if (copiedTimer.current) clearTimeout(copiedTimer.current);
-  }, []);
-
-  const aliyahIndices = getTodayAliyahIndices();
-  const dayIndex = new Date().getDay();
-  const dayName = DAY_NAMES_EN[dayIndex];
-  const isShabbat = aliyahIndices.length === 0;
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const [results, read] = await Promise.all([
-        Promise.all(aliyahIndices.map((i) => fetchAliyah(i))),
-        isTodayRead(),
-      ]);
-      setDataList(results);
-      setIsRead(read);
-      if (read) cancelReminders();
-      else scheduleReminders();
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Something went wrong');
-    } finally {
-      setLoading(false);
-    }
-  }, [aliyahIndices.join(',')]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
 
   const handleToggleRead = async () => {
     if (isRead) {
@@ -106,13 +105,14 @@ export default function HomeScreen() {
       setIsRead(true);
       cancelReminders();
     }
+    setStreak(await refreshWeeklyStreak());
   };
 
   if (loading) {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" color="#8B4513" />
-        <Text style={styles.loadingText}>Loading today's aliyah…</Text>
+        <Text style={styles.loadingText}>Loading today's reading…</Text>
       </View>
     );
   }
@@ -128,44 +128,56 @@ export default function HomeScreen() {
     );
   }
 
-  if (isShabbat) {
+  if (isShabbat || !reading) {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.parashaHe}>שבת שלום</Text>
           <Text style={styles.parashaEn}>Shabbat Shalom</Text>
-          <Text style={styles.aliyahLabel}>No aliyah today — enjoy your Shabbat!</Text>
+          <Text style={styles.aliyahLabel}>No reading today — enjoy your Shabbat!</Text>
         </View>
         <View style={styles.center}>
-          <Text style={styles.shabbatText}>Rest and recharge. Your next aliyah is on Sunday.</Text>
+          <Text style={styles.shabbatText}>Rest and recharge. Your next reading is on Sunday.</Text>
         </View>
       </View>
     );
   }
 
-  if (dataList.length === 0) return null;
-
-  const totalWords = dataList.reduce(
-    (sum, d) => sum + d.verses.reduce((s, v) => s + v.en.trim().split(/\s+/).filter(Boolean).length, 0),
-    0
+  const totalWords = reading.verses.reduce(
+    (s, v) => s + v.en.trim().split(/\s+/).filter(Boolean).length,
+    0,
   );
   const readingMinutes = Math.max(1, Math.round(totalWords / 200));
-
-  const headerData = dataList[0];
-  const aliyahLabels = dataList.map((d) => getAliyahLabel(d.aliyahIndex)).join('  +  ');
+  const sectionLabel = reading.isHaftarah ? 'Haftarah' : formatAliyotLabel(reading.aliyot);
 
   return (
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.parashaHe}>{headerData.parashaHe}</Text>
-        <Text style={styles.parashaEn}>Parshat {headerData.parashaEn}</Text>
+        <Text style={styles.parashaHe}>{reading.parashaHe}</Text>
+        <Text style={styles.parashaEn}>Parshat {reading.parashaEn}</Text>
         <Text style={styles.aliyahLabel}>
-          {aliyahLabels} · {dayName}
+          {sectionLabel} · {dayName}
         </Text>
-        <Text style={styles.refLabel}>
-          {dataList.map((d) => d.heRef).join(' · ')}
-        </Text>
+        <Text style={styles.refLabel}>{reading.heRef}</Text>
+        <Text style={styles.refLabelEn}>{reading.ref}</Text>
+
+        {/* Friday: Ashkenazi / Sephardi Haftarah toggle */}
+        {reading.isHaftarah && (
+          <View style={styles.riteRow}>
+            {RITES.map(({ key, label }) => (
+              <Pressable
+                key={key}
+                style={[styles.riteBtn, rite === key && styles.riteBtnActive]}
+                onPress={() => setRite(key)}
+              >
+                <Text style={[styles.riteText, rite === key && styles.riteTextActive]}>
+                  {label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        )}
       </View>
 
       {/* Language Toggle + Reading Time */}
@@ -190,44 +202,34 @@ export default function HomeScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {dataList.map((data, aliyahIdx) => (
-          <View key={aliyahIdx}>
-            {dataList.length > 1 && (
-              <View style={styles.aliyahDivider}>
-                <Text style={styles.aliyahDividerText}>
-                  {getAliyahLabel(data.aliyahIndex)}
-                </Text>
-              </View>
+        {reading.verses.map((verse, i) => (
+          <View key={i} style={styles.verseBlock}>
+            <View style={styles.verseNumberRow}>
+              <Text style={styles.verseNumber}>{i + 1}</Text>
+              <Text style={styles.verseRef}>{verse.ref}</Text>
+            </View>
+            {(mode === 'hebrew' || mode === 'both') && (
+              <Text style={styles.hebrewText}>{verse.he}</Text>
             )}
-            {data.verses.map((verse, i) => (
-              <View key={`${aliyahIdx}-${i}`} style={styles.verseBlock}>
-                <View style={styles.verseNumberRow}>
-                  <Text style={styles.verseNumber}>{i + 1}</Text>
-                  <View style={styles.verseMeta}>
-                    <Text style={styles.verseRef}>{verse.ref}</Text>
-                    <TouchableOpacity
-                      onPress={() => handleCopyVerse(data, verse, `${aliyahIdx}-${i}`)}
-                      hitSlop={8}
-                    >
-                      <Text style={styles.copyBtn}>
-                        {copiedKey === `${aliyahIdx}-${i}` ? '✓ Copied' : '⧉ Copy'}
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-                {(mode === 'hebrew' || mode === 'both') && (
-                  <Text style={styles.hebrewText}>{verse.he}</Text>
-                )}
-                {(mode === 'english' || mode === 'both') && (
-                  <AnnotatedText
-                    text={verse.en}
-                    style={styles.englishText}
-                    onWordPress={(word, definition) => setGlossaryWord({ word, definition })}
-                  />
-                )}
-                {i < data.verses.length - 1 && <View style={styles.verseDivider} />}
-              </View>
-            ))}
+            {(mode === 'english' || mode === 'both') && (
+              <AnnotatedText
+                text={verse.en}
+                style={styles.englishText}
+                onWordPress={(word, definition) => setGlossaryWord({ word, definition })}
+              />
+            )}
+            <View style={styles.copyRow}>
+              <TouchableOpacity
+                onPress={() => handleCopyVerse(reading.book, verse, `${i}`)}
+                hitSlop={8}
+                accessibilityLabel="Copy verse"
+              >
+                <Text style={styles.copyBtn}>
+                  {copiedKey === `${i}` ? '✓' : '⧉'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+            {i < reading.verses.length - 1 && <View style={styles.verseDivider} />}
           </View>
         ))}
       </ScrollView>
@@ -249,6 +251,11 @@ export default function HomeScreen() {
 
       {/* Mark as Read */}
       <View style={styles.footer}>
+        {streak > 0 && (
+          <Text style={styles.streakText}>
+            {streak} week{streak === 1 ? '' : 's'} in a row · keep it up!
+          </Text>
+        )}
         <TouchableOpacity
           style={[styles.readBtn, isRead && styles.readBtnDone]}
           onPress={handleToggleRead}
@@ -333,6 +340,37 @@ const styles = StyleSheet.create({
     marginTop: 2,
     fontFamily: 'NotoSerifHebrew_400Regular',
   },
+  refLabelEn: {
+    fontSize: 12,
+    color: '#C4A882',
+    marginTop: 1,
+    letterSpacing: 0.2,
+  },
+  riteRow: {
+    flexDirection: 'row',
+    marginTop: 10,
+    backgroundColor: 'rgba(0,0,0,0.18)',
+    borderRadius: 8,
+    padding: 3,
+    gap: 3,
+  },
+  riteBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 5,
+    borderRadius: 6,
+  },
+  riteBtnActive: {
+    backgroundColor: '#F5DEB3',
+  },
+  riteText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#F5DEB3',
+    letterSpacing: 0.2,
+  },
+  riteTextActive: {
+    color: BROWN,
+  },
   toggleRow: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -379,27 +417,32 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   verseNumber: {
-    fontSize: 11,
+    fontSize: 13,
+    lineHeight: 18,
     color: '#B0926A',
     fontWeight: '600',
     letterSpacing: 0.5,
   },
   verseRef: {
-    fontSize: 11,
+    fontSize: 13,
+    lineHeight: 18,
     color: '#B0926A',
     fontWeight: '600',
     letterSpacing: 0.5,
   },
-  verseMeta: {
+  copyRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
+    justifyContent: 'flex-end',
+    marginTop: 2,
   },
   copyBtn: {
-    fontSize: 11,
+    fontSize: 18,
+    lineHeight: 18,
     color: BROWN,
     fontWeight: '600',
     letterSpacing: 0.3,
+    paddingVertical: 2,
+    paddingHorizontal: 4,
   },
   hebrewText: {
     fontFamily: 'NotoSerifHebrew_400Regular',
@@ -446,6 +489,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.4,
   },
+  streakText: {
+    textAlign: 'center',
+    color: BROWN,
+    fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: 0.3,
+    marginBottom: 10,
+  },
   readingTime: {
     fontSize: 12,
     color: MID,
@@ -457,20 +508,6 @@ const styles = StyleSheet.create({
     color: MID,
     textAlign: 'center',
     lineHeight: 26,
-  },
-  aliyahDivider: {
-    borderTopWidth: 2,
-    borderTopColor: BROWN,
-    marginTop: 16,
-    marginBottom: 12,
-    paddingTop: 8,
-  },
-  aliyahDividerText: {
-    fontSize: 14,
-    color: BROWN,
-    fontWeight: '700',
-    textAlign: 'center',
-    marginBottom: 8,
   },
   modalOverlay: {
     flex: 1,

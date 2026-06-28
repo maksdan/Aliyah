@@ -1,12 +1,20 @@
 import * as Notifications from 'expo-notifications';
 
+const CONGRATS_ID = 'weekly-congrats';
+
 Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: false,
-    shouldSetBadge: false,
-  }),
+  handleNotification: async (notification) => {
+    // The Sunday congrats is a one-time celebration: show it as a banner but
+    // never let it persist in Notification Center, so it goes away on its own
+    // after appearing once.
+    const isCongrats = notification.request.identifier === CONGRATS_ID;
+    return {
+      shouldShowBanner: true,
+      shouldShowList: !isCongrats,
+      shouldPlaySound: false,
+      shouldSetBadge: false,
+    };
+  },
 });
 
 // weekday 1=Sunday … 6=Friday; 7=Saturday is intentionally excluded
@@ -27,10 +35,16 @@ export async function requestPermissionAndSchedule(): Promise<void> {
   await Promise.all(
     WEEKDAYS_TO_NOTIFY.map((weekday) =>
       Notifications.scheduleNotificationAsync({
-        content: {
-          title: 'Daily Aliyah',
-          body: "Today's portion from the Torah is ready to read.",
-        },
+        content:
+          weekday === 6 // Friday
+            ? {
+                title: 'Weekly Haftarah',
+                body: "Today's Haftarah is ready to read.",
+              }
+            : {
+                title: 'Daily Aliyah',
+                body: "Today's portion from the Torah is ready to read.",
+              },
         trigger: {
           type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
           weekday,
@@ -75,4 +89,34 @@ export async function cancelReminders(): Promise<void> {
       Notifications.cancelScheduledNotificationAsync(`reminder-${hour}`).catch(() => {})
     )
   );
+}
+
+// Arm a one-off Sunday-morning notification celebrating a fully-read week.
+// Re-scheduled on every streak refresh, so the message always reflects the
+// current streak length. A no-op if the target time is already in the past.
+export async function scheduleWeeklyCongrats(streak: number, date: Date): Promise<void> {
+  await cancelWeeklyCongrats();
+  if (date.getTime() <= Date.now()) return;
+
+  const title = streak <= 1 ? 'A full week of readings!' : `${streak}-week streak!`;
+  const body =
+    streak <= 1
+      ? 'You read every portion last week. Keep it going this week!'
+      : `That's ${streak} weeks in a row of complete readings. Yasher koach — keep it up!`;
+
+  await Notifications.scheduleNotificationAsync({
+    identifier: CONGRATS_ID,
+    content: { title, body },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.DATE,
+      date,
+    },
+  });
+}
+
+export async function cancelWeeklyCongrats(): Promise<void> {
+  // Cancel any still-pending schedule and clear it from Notification Center if
+  // it has already been delivered, so the "keep it up!" alert doesn't linger.
+  await Notifications.cancelScheduledNotificationAsync(CONGRATS_ID).catch(() => {});
+  await Notifications.dismissNotificationAsync(CONGRATS_ID).catch(() => {});
 }
