@@ -13,9 +13,9 @@ import * as Clipboard from 'expo-clipboard';
 import AnnotatedText from '../components/AnnotatedText';
 import { DayReading, Verse, fetchTodayReading } from '../services/sefaria';
 import { Rite } from '../data/schedule';
-import { DAY_NAMES_EN, formatAliyotLabel } from '../utils/aliyah';
+import { formatAliyotLabel } from '../utils/aliyah';
 import { cancelReminders, scheduleReminders } from '../services/notifications';
-import { isTodayRead, markTodayRead, unmarkTodayRead } from '../utils/storage';
+import { getLastSeenStreak, isTodayRead, markStreakBannerSeen, markTodayRead, unmarkTodayRead } from '../utils/storage';
 import { refreshWeeklyStreak } from '../utils/tracker';
 
 type DisplayMode = 'hebrew' | 'english' | 'both';
@@ -51,11 +51,11 @@ export default function HomeScreen() {
   const [rite, setRite] = useState<Rite>('ashkenazi');
   const [isRead, setIsRead] = useState(false);
   const [streak, setStreak] = useState(0);
+  const [showStreakBanner, setShowStreakBanner] = useState(false);
   const [glossaryWord, setGlossaryWord] = useState<{ word: string; definition: string } | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const copiedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const dayName = DAY_NAMES_EN[new Date().getDay()];
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -66,7 +66,13 @@ export default function HomeScreen() {
       setIsRead(read);
       if (result === null || read) cancelReminders();
       else scheduleReminders();
-      setStreak(await refreshWeeklyStreak());
+      const newStreak = await refreshWeeklyStreak();
+      setStreak(newStreak);
+      const lastSeen = await getLastSeenStreak();
+      if (newStreak > 0 && newStreak > lastSeen) {
+        setShowStreakBanner(true);
+        await markStreakBannerSeen(newStreak);
+      }
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Something went wrong');
     } finally {
@@ -102,7 +108,13 @@ export default function HomeScreen() {
       setIsRead(true);
       cancelReminders();
     }
-    setStreak(await refreshWeeklyStreak());
+    const newStreak = await refreshWeeklyStreak();
+    setStreak(newStreak);
+    const lastSeen = await getLastSeenStreak();
+    if (newStreak > 0 && newStreak > lastSeen) {
+      setShowStreakBanner(true);
+      await markStreakBannerSeen(newStreak);
+    }
   };
 
   if (loading) {
@@ -154,8 +166,9 @@ export default function HomeScreen() {
         <Text style={styles.parashaHe}>{reading.parashaHe}</Text>
         <Text style={styles.parashaEn}>Parshat {reading.parashaEn}</Text>
         <Text style={styles.aliyahLabel}>
-          {sectionLabel} · {dayName}
+          {sectionLabel}
         </Text>
+        <Text style={styles.dayLabel}>{reading.day}</Text>
         <Text style={styles.refLabel}>{reading.heRef}</Text>
         <Text style={styles.refLabelEn}>{reading.ref}</Text>
 
@@ -248,7 +261,7 @@ export default function HomeScreen() {
 
       {/* Mark as Read */}
       <View style={styles.footer}>
-        {streak > 0 && (
+        {showStreakBanner && (
           <Text style={styles.streakText}>
             {streak} week{streak === 1 ? '' : 's'} in a row · keep it up!
           </Text>
@@ -326,10 +339,18 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   aliyahLabel: {
-    fontSize: 13,
-    color: '#D4B896',
-    marginTop: 4,
+    fontSize: 15,
+    color: '#F5DEB3',
+    fontWeight: '600',
+    marginTop: 6,
     letterSpacing: 0.2,
+  },
+  dayLabel: {
+    fontSize: 12,
+    color: '#D4B896',
+    marginTop: 2,
+    letterSpacing: 0.3,
+    textTransform: 'uppercase',
   },
   refLabel: {
     fontSize: 12,
