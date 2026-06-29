@@ -29,13 +29,17 @@ const TRANSLITERATIONS: Record<string, string> = {
   // ===================== SONS OF JACOB / TRIBES =====================
 
   'Reuben': 'Reʾuven',
+  'Reubenites': 'Reʾuvenites',
   'Simeon': 'Shimʿon',
+  'Simeonites': 'Shimʿonites',
   'Judah': 'Yehudah',
   'Joseph': 'Yosef',
   'Benjamin': 'Binyamin',
   'Issachar': 'Yiśśakhar',
   'Naphtali': 'Naftali',
+  'Naphtalites': 'Naftalites',
   'Zebulun': 'Zevulun',
+  'Zebulunites': 'Zevulunites',
   'Ephraim': 'Efrayim',
   'Manasseh': 'Menasheh',
 
@@ -54,7 +58,9 @@ const TRANSLITERATIONS: Record<string, string> = {
   'Onan': 'ʾOnan',
   'Shelah': 'Shelah',
   'Perez': 'Pereṣ',
+  'Perezites': 'Pereṣites',
   'Zerah': 'Zeraḥ',
+  'Zerahites': 'Zeraḥites',
   'Tamar': 'Tamar',
   'Keturah': 'Qeṭurah',
   'Hamor': 'Ḥamor',
@@ -62,6 +68,7 @@ const TRANSLITERATIONS: Record<string, string> = {
   'Heth': 'Ḥeth',
   'Laban': 'Lavan',
   'Shechem': 'Shekhem',
+  'Shechemites': 'Shekhemites',
   'Seir': 'Seʿir',
   'Zoar': 'Ṣoʿar',
   'Potiphar': 'Poṭifar',
@@ -71,6 +78,10 @@ const TRANSLITERATIONS: Record<string, string> = {
   'Phicol': 'Fikol',
   'Nephilim': 'Nefilim',
   'Bela': 'Belaʿ',
+  'Belaites': 'Belaʿites',
+  'Eliab': 'Eliav',
+  'Ephrathah': 'Efratah',
+  'Ephrath': 'Efrat',
 
   // ===================== EXODUS FIGURES =====================
 
@@ -88,6 +99,7 @@ const TRANSLITERATIONS: Record<string, string> = {
   // ===================== NUMBERS / WILDERNESS =====================
 
   'Korah': 'Qoraḥ',
+  'Korahites': 'Qoraḥites',
   'Abiram': 'Aviram',
   'Dathan': 'Datan',
   'Sihon': 'Siḥon',
@@ -106,9 +118,12 @@ const TRANSLITERATIONS: Record<string, string> = {
   'Kohathites': 'Qehathites',
   'Jair': 'Yaʾir',
   'Jahleel': 'Yaḥleʾel',
+  'Jahleelites': 'Yaḥleʾelites',
   'Jahzeel': 'Yaḥṣeʾel',
+  'Jahzeelites': 'Yaḥṣeʾelites',
   'Jahath': 'Yaḥath',
   'Jashub': 'Yashuv',
+  'Jashubites': 'Yashuvites',
   'Zippor': 'Ṣippor',
   'Beor': 'Beʿor',
   'Caleb': 'Kalev',
@@ -122,16 +137,112 @@ const TRANSLITERATIONS: Record<string, string> = {
   'Abihu': 'Avihu',
   'Zur': 'Ṣur',
   'Midian': 'Midyan',
-  'Hepher': 'Ḥefer',
-  'Hupham': 'Ḥufam',
-  'Shupham': 'Shufam',
-  'Shuthelah': 'Shutelaḥ',
-  'Tahan': 'Taḥan',
-  'Eran': 'ʿEran',
+
+  // ===== Numbers 26 clan names =====
+
+  // Reuben
+  'Hanoch': 'Ḥanokh',
+  'Hanochites': 'Ḥanokhites',
+  'Enochites': 'Ḥanokhites',
+  'Hezron': 'Ḥeṣron',
+  'Hezronites': 'Ḥeṣronites',
+  'Palluites': 'Palluʾites',
+
+  // Simeon
+  'Nemuel': 'Nemuʾel',
+  'Nemuelites': 'Nemuʾelites',
+  'Jamin': 'Yamin',
+  'Jaminites': 'Yaminites',
+  'Jachin': 'Yakhin',
+  'Jachinites': 'Yakhinites',
+  'Shaul': 'Shaʾul',
+  'Shaulites': 'Shaʾulites',
+  'Saulites': 'Shaʾulites',
+
+  // Gad
+  'Zephon': 'Ṣefon',
+  'Zephonites': 'Ṣefonites',
+  'Haggi': 'Ḥaggi',
+  'Haggites': 'Ḥaggites',
+  'Eri': 'ʿEri',
+  'Erites': 'ʿErites',
+
+  // Judah
+  'Hamul': 'Ḥamul',
+  'Hamulites': 'Ḥamulites',
+
+  // Issachar
+  'Tola': 'Tolaʿ',
+  'Tolaites': 'Tolaʿites',
+  'Puvah': 'Fuvah',
+
+  // Manasseh
+  'Machir': 'Makhir',
+  'Machirites': 'Makhirites',
+  'Helek': 'Ḥeleq',
+  'Helekites': 'Ḥeleqites',
   'Iezer': 'Iyeʿzer',
+  'Iezerites': 'Iyeʿzerites',
+  'Hepher': 'Ḥefer',
+  'Hepherites': 'Ḥeferites',
+  'Shemidaites': 'Shemidaites',
+  'Malchiel': 'Malqiʾel',
+  'Malchielites': 'Malqiʾelites',
+  'Gileadites': 'Gilʿadites',
+
+  // Ephraim
+  'Shuthelah': 'Shutelaḥ',
+  'Shuthelahites': 'Shutelaḥites',
+  'Becher': 'Bekher',
+  'Becherites': 'Bekherites',
+  'Tahan': 'Taḥan',
+  'Tahanites': 'Taḥanites',
+  'Eran': 'ʿEran',
+  'Eranites': 'ʿEranites',
+
+  // Benjamin
+  'Ahiram': 'Aḥiram',
+  'Ahiramites': 'Aḥiramites',
+  'Shupham': 'Shufam',
+  'Shuphamites': 'Shufamites',
+  'Shephupham': 'Shefufam',
+  'Hupham': 'Ḥufam',
+  'Huphamites': 'Ḥufamites',
+  'Naamanites': 'Naʿamanites',
+
+  // Dan
+  'Shuham': 'Shuḥam',
+  'Shuhamites': 'Shuḥamites',
+
+  // Asher
+  'Imnah': 'Yimnah',
+  'Imnites': 'Yimnites',
+  'Ishvi': 'Yishvi',
+  'Ishvites': 'Yishvites',
   'Beriah': 'Beriʿah',
-  'Serah': 'Seraḥ',
+  'Beriites': 'Beriʿites',
+  'Beriahites': 'Beriʿahites',
   'Heber': 'Ḥever',
+  'Heberites': 'Ḥeverites',
+  'Serah': 'Seraḥ',
+
+  // Naphtali
+  'Jezer': 'Yeṣer',
+  'Jezerites': 'Yeṣerites',
+
+  // Levi (Numbers 26:57–62)
+  'Hebronites': 'Ḥevronites',
+  'Mahli': 'Maḥli',
+  'Mahlites': 'Maḥlites',
+  'Mahlon': 'Maḥlon',
+
+  // Numbers 1 tribal leaders
+  'Elishama': 'Elishamaʿ',
+  'Ahiezer': 'Aḥiʿezer',
+  'Pagiel': 'Pagʿiʾel',
+  'Ahira': 'Aḥiraʿ',
+  'Nethanel': 'Netanʾel',
+  'Abidan': 'Avidan',
 
   // ===================== JUDGES / EARLY PROPHETS =====================
 
@@ -212,7 +323,6 @@ const TRANSLITERATIONS: Record<string, string> = {
   'Orpah': 'ʿOrpah',
   'Obed': 'ʿOved',
   'Ruth': 'Rut',
-  'Mahlon': 'Maḥlon',
   'Elimelech': 'Elimelekh',
 
   // ===================== PLACES =====================
@@ -230,6 +340,7 @@ const TRANSLITERATIONS: Record<string, string> = {
   'Jericho': 'Yeriḥo',
   'Jezreel': 'Yizreʿel',
   'Jabesh': 'Yavesh',
+  'Jabesh-gilead': 'Yavesh-Gilʿad',
   'Peor': 'Peʿor',
   'Beer': 'Beʾer',
   'Nahaliel': 'Naḥaliʾel',
@@ -265,7 +376,6 @@ const TRANSLITERATIONS: Record<string, string> = {
   'Zorah': 'Ṣorʿah',
   'Zarephath': 'Ṣarefat',
   'Elath': 'ʾElat',
-  'Jabesh-gilead': 'Yavesh-Gilʿad',
 
   // ===================== NATIONS & PEOPLES =====================
 
@@ -313,8 +423,6 @@ const TRANSLITERATIONS: Record<string, string> = {
   'Beth-peor': 'Beth-Peʿor',
   'Baal-zephon': 'Baʿal-Ṣefon',
   'Kiriath-arba': 'Qiryath-Arbaʿ',
-  'Ephrathah': 'Efratah',
-  'Ephrath': 'Efrat',
 };
 
 // Remove no-op entries (where value equals key)
