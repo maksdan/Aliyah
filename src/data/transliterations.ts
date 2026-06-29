@@ -1,40 +1,95 @@
 // Maps JPS English proper nouns → academic Hebrew transliteration.
-// Conventions: ḥ=ח  ṭ=ט  ṣ=צ  q=ק  ʿ=ע  ś=שׂ  w=ו(cons.)  v=בֿ(vet)  th=תֿ(thav)
-// א: unmarked when obvious; ʾ between vowels to prevent misreading
+// Conventions applied throughout:
+//   ḥ = ח  (anywhere in word)
+//   ṭ = ט  (anywhere in word)
+//   ṣ = צ  (anywhere in word — never 'ts', 'z', or plain 's')
+//   q = ק
+//   ʿ = ע  (anywhere in word)
+//   ʾ = א  (between vowels, to prevent misreading)
+//   f = פ  (fricative, without dagesh — never 'ph')
+//   v = ב / ו  (fricative)
+//   Y or I = י at the start of a name (never J)
 
 const TRANSLITERATIONS: Record<string, string> = {
-  // ===== People =====
 
-  // Genesis
-  'Keturah': 'Qeṭurah',
+  // ===================== PATRIARCHS & MATRIARCHS =====================
+
+  'Abraham': 'Avraham',
+  'Sarah': 'Sarah',
+  'Hagar': 'Hagar',
+  'Isaac': 'Yiṣḥaq',
+  'Rebekah': 'Rivqah',
+  'Jacob': 'Yaʿaqov',
+  'Rachel': 'Raḥel',
+  'Leah': 'Leʾah',
   'Esau': 'ʿEsaw',
+  'Ishmael': 'Yishmaʿel',
+  'Nahor': 'Naḥor',
+
+  // ===================== SONS OF JACOB / TRIBES =====================
+
+  'Reuben': 'Reʾuven',
+  'Simeon': 'Shimʿon',
+  'Judah': 'Yehudah',
+  'Joseph': 'Yosef',
+  'Benjamin': 'Binyamin',
+  'Issachar': 'Yiśśakhar',
+  'Naphtali': 'Naftali',
+  'Zebulun': 'Zevulun',
+  'Ephraim': 'Efrayim',
+  'Manasseh': 'Menasheh',
+
+  // ===================== GENESIS FIGURES =====================
+
+  'Ham': 'Ḥam',
+  'Japheth': 'Yefeth',
+  'Joktan': 'Yoqtan',
+  'Jobab': 'Yovav',
+  'Enoch': 'Ḥanokh',
+  'Methuselah': 'Metushelaḥ',
+  'Lamech': 'Lemekh',
+  'Cain': 'Qayin',
+  'Kain': 'Qayin',
+  'Er': 'ʿEr',
+  'Onan': 'ʾOnan',
+  'Shelah': 'Shelah',
+  'Perez': 'Pereṣ',
+  'Zerah': 'Zeraḥ',
+  'Tamar': 'Tamar',
+  'Keturah': 'Qeṭurah',
   'Hamor': 'Ḥamor',
   'Ephron': 'ʿEfron',
   'Heth': 'Ḥeth',
-  'Potiphar': 'Poṭifar',
   'Laban': 'Lavan',
-  'Leah': 'Leʾah',
-  'Tamar': 'Thamar',
-  'Judah': 'Yehudah',
-  'Reuben': 'Reʾuven',
-  'Simeon': 'Shimʿon',
-  'Issachar': 'Yiśśakhar',
-  'Naphtali': 'Nafthali',
-  'Zebulun': 'Zevulun',
-  'Ishmael': 'Yishmaʿel',
-  'Nahor': 'Naḥor',
   'Shechem': 'Shekhem',
   'Seir': 'Seʿir',
   'Zoar': 'Ṣoʿar',
+  'Potiphar': 'Poṭifar',
+  'Asenath': 'ʾAsenat',
+  'Eliphaz': 'Elifaz',
+  'Abimelech': 'Avimelekh',
+  'Phicol': 'Fikol',
+  'Nephilim': 'Nefilim',
+  'Bela': 'Belaʿ',
 
-  // Exodus–Deuteronomy
+  // ===================== EXODUS FIGURES =====================
+
+  'Moses': 'Moshe',
+  'Aaron': 'Aharon',
+  'Miriam': 'Miryam',
+  'Jochebed': 'Yokheved',
+  'Jethro': 'Yitro',
   'Zipporah': 'Ṣipporah',
   'Hobab': 'Ḥovav',
   'Hur': 'Ḥur',
   'Bezalel': 'Beṣalʾel',
   'Oholiab': 'Oholiav',
+
+  // ===================== NUMBERS / WILDERNESS =====================
+
   'Korah': 'Qoraḥ',
   'Abiram': 'Aviram',
+  'Dathan': 'Datan',
   'Sihon': 'Siḥon',
   'Balak': 'Balaq',
   'Balaam': 'Bilʿam',
@@ -42,21 +97,126 @@ const TRANSLITERATIONS: Record<string, string> = {
   'Og': 'ʿOg',
   'Eleazar': 'Elʿazar',
   'Zelophehad': 'Ṣelofḥad',
+  'Mahlah': 'Maḥlah',
+  'Hoglah': 'Ḥoglah',
+  'Milcah': 'Milqah',
+  'Tirzah': 'Tirṣah',
   'Nahshon': 'Naḥshon',
   'Kohath': 'Qehath',
   'Kohathites': 'Qehathites',
+  'Jair': 'Yaʾir',
+  'Jahleel': 'Yaḥleʾel',
+  'Jahzeel': 'Yaḥṣeʾel',
+  'Jahath': 'Yaḥath',
+  'Jashub': 'Yashuv',
   'Zippor': 'Ṣippor',
   'Beor': 'Beʿor',
   'Caleb': 'Kalev',
-  'Kain': 'Qayin',
-  'Abihu': 'Avihu',
-  'Chemosh': 'Kemosh',
+  'Joshua': 'Yehoshuaʿ',
+  'Jephunneh': 'Yefunneh',
   'Elizur': 'Eliṣur',
   'Gamaliel': 'Gamliʾel',
   'Shelumiel': 'Shelumiʾel',
   'Eliasaph': 'Elyasaf',
+  'Chemosh': 'Kemosh',
+  'Abihu': 'Avihu',
+  'Zur': 'Ṣur',
+  'Midian': 'Midyan',
+  'Hepher': 'Ḥefer',
+  'Hupham': 'Ḥufam',
+  'Shupham': 'Shufam',
+  'Shuthelah': 'Shutelaḥ',
+  'Tahan': 'Taḥan',
+  'Eran': 'ʿEran',
+  'Iezer': 'Iyeʿzer',
+  'Beriah': 'Beriʿah',
+  'Serah': 'Seraḥ',
+  'Heber': 'Ḥever',
 
-  // ===== Places =====
+  // ===================== JUDGES / EARLY PROPHETS =====================
+
+  'Jephthah': 'Yiftaḥ',
+  'Gideon': 'Gidʿon',
+  'Jabin': 'Yavin',
+  'Barak': 'Baraq',
+  'Deborah': 'Devorah',
+  'Samson': 'Shimshon',
+  'Rahab': 'Raḥav',
+  'Hannah': 'Ḥannah',
+  'Eli': 'ʿEli',
+  'Japhia': 'Yafiʿa',
+  'Ophrah': 'ʿOfrah',
+
+  // ===================== SAMUEL / KINGS ERA =====================
+
+  'Samuel': 'Shemuʾel',
+  'Saul': 'Shaʾul',
+  'Jonathan': 'Yonatan',
+  'David': 'David',
+  'Solomon': 'Shelomoh',
+  'Nathan': 'Natan',
+  'Joab': 'Yoʾav',
+  'Abner': 'Avner',
+  'Shaphat': 'Shafaṭ',
+  'Elijah': 'Eliyyahu',
+  'Elisha': 'Elishaʿ',
+  'Obadiah': 'ʿOvadyah',
+  'Ahab': 'Aḥav',
+  'Ahaz': 'Aḥaz',
+  'Ahaziah': 'Aḥazyah',
+  'Ahijah': 'Aḥiyyah',
+  'Jezebel': 'Izével',
+  'Rehoboam': 'Reḥovʿam',
+  'Jeroboam': 'Yarovʿam',
+  'Jehu': 'Yehu',
+  'Joel': 'Yoʾel',
+  'Joash': 'Yoʾash',
+  'Jehoshaphat': 'Yehoshafat',
+  'Jehoiada': 'Yehoyadeaʿ',
+  'Jehoiakim': 'Yehoyaqim',
+  'Jehoiachin': 'Yehoyakhin',
+  'Hazael': 'Ḥazaʾel',
+  'Naaman': 'Naʿaman',
+  'Gehazi': 'Geḥazi',
+  'Hezekiah': 'Ḥizqiyyah',
+  'Uzziah': 'ʿUziyyah',
+  'Amaziah': 'ʿAmaṣyah',
+  'Zedekiah': 'Ṣidqiyyahu',
+  'Javan': 'Yavan',
+  'Pharaoh': 'Parʿoh',
+  'Pharaohs': 'Parʿohs',
+
+  // ===================== WRITING PROPHETS =====================
+
+  'Isaiah': 'Yeshaʿyahu',
+  'Jeremiah': 'Yirmeyahu',
+  'Ezekiel': 'Yeḥezqeʾel',
+  'Hosea': 'Hosheaʿ',
+  'Hoshea': 'Hosheaʿ',
+  'Amos': 'ʿAmos',
+  'Jonah': 'Yonah',
+  'Micah': 'Mikhah',
+  'Nahum': 'Naḥum',
+  'Habakkuk': 'Ḥavaquq',
+  'Zephaniah': 'Ṣefanyah',
+  'Haggai': 'Ḥaggai',
+  'Zechariah': 'Zekaryah',
+  'Malachi': 'Malʾakhi',
+  'Nehemiah': 'Neḥemyah',
+  'Rezin': 'Reṣin',
+
+  // ===================== RUTH / MEGILLOT =====================
+
+  'Boaz': 'Boʿaz',
+  'Naomi': 'Noʿomi',
+  'Orpah': 'ʿOrpah',
+  'Obed': 'ʿOved',
+  'Ruth': 'Rut',
+  'Mahlon': 'Maḥlon',
+  'Elimelech': 'Elimelekh',
+
+  // ===================== PLACES =====================
+
   'Heshbon': 'Ḥeshbon',
   'Kadesh': 'Qadesh',
   'Hebron': 'Ḥevron',
@@ -65,6 +225,11 @@ const TRANSLITERATIONS: Record<string, string> = {
   'Horeb': 'Ḥorev',
   'Jabbok': 'Yabboq',
   'Jahaz': 'Yahaṣ',
+  'Jazer': 'Yaʿzer',
+  'Jordan': 'Yarden',
+  'Jericho': 'Yeriḥo',
+  'Jezreel': 'Yizreʿel',
+  'Jabesh': 'Yavesh',
   'Peor': 'Peʿor',
   'Beer': 'Beʾer',
   'Nahaliel': 'Naḥaliʾel',
@@ -85,8 +250,25 @@ const TRANSLITERATIONS: Record<string, string> = {
   'Beersheba': 'Beʾer-Shevaʿ',
   'Ophir': 'Ofir',
   'Moriah': 'Moriyyah',
+  'Canaan': 'Kenaʿan',
+  'Gomorrah': 'ʿAmorah',
+  'Gaza': 'ʿAzah',
+  'Gibeah': 'Givʿah',
+  'Gibeon': 'Givʿon',
+  'Geba': 'Gevaʿ',
+  'Elam': 'ʿElam',
+  'Hamath': 'Ḥamath',
+  'Bethlehem': 'Beth-Leḥem',
+  'Joppa': 'Yafo',
+  'Jokneam': 'Yoqneʿam',
+  'Zion': 'Ṣiyyon',
+  'Zorah': 'Ṣorʿah',
+  'Zarephath': 'Ṣarefat',
+  'Elath': 'ʾElat',
+  'Jabesh-gilead': 'Yavesh-Gilʿad',
 
-  // ===== Nations & Peoples =====
+  // ===================== NATIONS & PEOPLES =====================
+
   'Moab': 'Moʾav',
   'Moabite': 'Moʾavite',
   'Moabites': 'Moʾavites',
@@ -109,8 +291,15 @@ const TRANSLITERATIONS: Record<string, string> = {
   'Ishmaelites': 'Yishmaʿelites',
   'Jebusite': 'Yevusite',
   'Jebusites': 'Yevusites',
+  'Canaanite': 'Kenaʿanite',
+  'Canaanites': 'Kenaʿanites',
+  'Gibeonite': 'Givʿonite',
+  'Gibeonites': 'Givʿonites',
+  'Philistine': 'Pelishti',
+  'Philistines': 'Pelishtim',
 
-  // ===== Compound place names =====
+  // ===================== COMPOUND PLACE NAMES =====================
+
   'Baal-peor': 'Baʿal-Peʿor',
   'Kiriath-huzoth': 'Qiryath-Ḥuṣoth',
   'Bamoth-baal': 'Bamoth-Baʿal',
@@ -124,6 +313,8 @@ const TRANSLITERATIONS: Record<string, string> = {
   'Beth-peor': 'Beth-Peʿor',
   'Baal-zephon': 'Baʿal-Ṣefon',
   'Kiriath-arba': 'Qiryath-Arbaʿ',
+  'Ephrathah': 'Efratah',
+  'Ephrath': 'Efrat',
 };
 
 // Remove no-op entries (where value equals key)
