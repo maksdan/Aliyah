@@ -423,13 +423,206 @@ const TRANSLITERATIONS: Record<string, string> = {
   'Beth-peor': 'Beth-Peʿor',
   'Baal-zephon': 'Baʿal-Ṣefon',
   'Kiriath-arba': 'Qiryath-Arbaʿ',
+
+  // ===================== J → Y CORRECTIONS =====================
+
+  'Adonijah': 'Adoniyyah',           // אֲדֹנִיָּה
+  'Jabal': 'Yaval',                  // יָבָל
+  'Jael': 'Yaʿel',                   // יָעֵל — also ayin
+  'Jalam': 'Yaʿlam',                 // יַעְלָם — also ayin
+  'Jashobeam': 'Yashobʿam',          // יָשׇׁבְעָם — also ayin
+  'Jeconiah': 'Yekhonyah',           // יְכׇנְיָה
+  'Jeduthun': 'Yedutun',             // יְדוּתוּן
+  'Jehiel': 'Yeḥiʾel',               // יְחִיאֵל — also ḥet
+  'Jehoahaz': 'Yehoʾaḥaz',           // יְהוֹאָחָז — also ḥet
+  'Jehoash': 'Yehoʾash',             // יְהוֹאָשׁ
+  'Jehoram': 'Yehoram',              // יְהוֹרָם
+  'Jehosheba': 'Yehoshevaʿ',         // יְהוֹשֶׁבַע — also ayin
+  'Jeiel': 'Yeʿiʾel',                // יְעִיאֵל — also ayin
+  'Jerahmeel': 'Yeraḥmeʾel',         // יְרַחְמְאֵל — also ḥet
+  'Jeruel': 'Yeruʾel',               // יְרוּאֵל
+  'Jeshimon': 'Yeshimon',            // יְשִׁימוֹן
+  'Jetheth': 'Yeteth',               // יְתֵת
+  'Jetur': 'Yetur',                  // יְטוּר
+  'Jeuel': 'Yeʿiʾel',                // יְעִיאֵל — variant of Jeiel
+  'Jeush': 'Yeʿush',                 // יְעוּשׁ — also ayin
+  'Jidlaph': 'Yidlaf',               // יִדְלָף — also peh → f
+  'Joah': 'Yoʾaḥ',                   // יוֹאָח — also ḥet
+  'Jonadab': 'Yonadav',              // יוֹנָדָב
+  'Jokshan': 'Yoqshan',              // יָקְשָׁן — also quf
+  'Joram': 'Yoram',                  // יוֹרָם
+  'Josiah': 'Yoshiyyahu',            // יֹאשִׁיָּהוּ
+  'Jubal': 'Yuval',                  // יוּבָל
+  'Judith': 'Yehudit',               // יְהוּדִית
+  'Benjaminite': 'Binyaminite',
+  'Benjaminites': 'Binyaminites',
+  'Bene-jaakan': 'Bene-Yaʿaqan',     // also ayin
+  'Beeroth-bene-jaakan': 'Beerot-Bene-Yaʿaqan',
+
+  // ===================== AYIN (ʿ) =====================
+
+  'Abarim': 'ʿAvarim',               // עֲבָרִים
+  'Abida': 'Avidaʿ',                 // אֲבִידָע — ayin at end
+  'Abinoam': 'Avinoʿam',             // אֲבִינֹעַם
+  'Achbor': 'ʿAkhbor',               // עַכְבּוֹר
+  'Achor': 'ʿAkhor',                 // עָכוֹר
+  'Adah': 'ʿAdah',                   // עָדָה
+  'Adullamite': 'ʿAdullamite',       // עֲדֻלָּמִי
+  'Ain': 'ʿAyin',                    // עַיִן
+  'Akan': 'ʿAqan',                   // עָקָן — also quf
+  'Akrabbim': 'ʿAqrabbim',           // עַקְרַבִּים — also quf
+  'Almon-diblathaim': 'ʿAlmon-Divlatayim', // עַלְמֹן
+  'Alvah': 'ʿAlvah',                 // עַלְוָה
+  'Alvan': 'ʿAlvan',                 // עַלְוָן
+  'Amasa': 'ʿAmasa',                 // עֲמָשָׂא
+  'Ammiel': 'ʿAmmiʾel',              // עַמִּיאֵל
+  'Ammihud': 'ʿAmmiḥud',             // עַמִּיהוּד — also ḥet
+  'Amminadab': 'ʿAmminadav',         // עַמִּינָדָב
+  'Ammishaddai': 'ʿAmishaddai',      // עַמִּישַׁדַּי
+  'Amram': 'ʿAmram',                 // עַמְרָם
+  'Amramites': 'ʿAmramites',
+  'Anah': 'ʿAnah',                   // עֲנָה
+  'Anak': 'ʿAnaq',                   // עֲנָק — also quf
+  'Anakites': 'ʿAnaqites',
+  'Anath': 'ʿAnat',                  // עֲנָת
+  'Anathoth': 'ʿAnatot',             // עֲנָתוֹת
+  'Arabah': 'ʿAravah',               // עֲרָבָה
+  'Arod': 'ʿArod',                   // עֲרוֹד
+  'Arodi': 'ʿArodi',
+  'Arodites': 'ʿArodites',
+  'Ashtaroth': 'ʿAshtarot',          // עַשְׁתָּרוֹת
+  'Ashteroth-karnaim': 'ʿAshtarot-Qarnayim', // also quf
+  'Ataroth': 'ʿAtarot',              // עֲטָרוֹת
+  'Atroth-shophan': 'ʿAtrot-Shofan', // עַטְרֹת שׁוֹפָן — also peh → f
+  'Avvim': 'ʿAwwim',                 // עַוִּים
+  'Azazel': 'ʿAzaʾzel',              // עֲזָאזֵל
+  'Azmon': 'ʿAṣmon',                 // עַצְמוֹן — also tsadi
+  'Azzan': 'ʿAzzan',                 // עַזָּן
+  'Baal': 'Baʿal',                   // בַּעַל
+  'Baalim': 'Baʿalim',
+  'Baali': 'Baʿali',
+  'Baal-hanan': 'Baʿal-Ḥanan',       // also ḥet
+  'Baal-meon': 'Baʿal-Meʿon',        // ayin in both parts
+  'Baal-shalishah': 'Baʿal-Shalishah',
+  'Belial': 'Beliyaʿal',             // בְּלִיַּעַל
+  'Ben-ammi': 'Ben-ʿAmmi',           // עַמִּי
+  'Beon': 'Beʿon',                   // בְּעֹן
+  'Bera': 'Beraʿ',                   // בֶּרַע — king of Sodom
+  'Birsha': 'Birshaʿ',               // בֶּרֶשַׁע — king of Gomorrah
+  'Chedorlaomer': 'Kedorlaʿomer',    // כְּדׇרְלָעֹמֶר
+  'Eber': 'ʿEver',                   // עֵבֶר
+  'Ebal': 'ʿEival',                  // עֵיבָל (Mount Ebal)
+  'Eden': 'ʿEden',                   // עֵדֶן
+  'Hadadezer': 'Hadadʿezer',         // הֲדַדְעֶזֶר
+  'Maon': 'Maʿon',                   // מָעוֹן
+  'Naamah': 'Naʿamah',               // נַעֲמָה
+  'Ophel': 'ʿOfel',                  // עֹפֶל
+  'Reu': 'Reʿu',                     // רְעוּ
+  'Shua': 'Shuaʿ',                   // שׁוּעַ — Judah's wife
+  'Taberah': 'Tavʿerah',             // תַּבְעֵרָה
+  'Tekoa': 'Teqoʿa',                 // תְּקוֹעַ — also quf
+  'Tekoah': 'Teqoʿa',                // alternate spelling
+  'Timna': 'Timnaʿ',                 // תִּמְנַע — ayin at end
+  'Uzza': 'ʿUzza',                   // עֻזָּא
+  'Uzzah': 'ʿUzzah',                 // עֻזָּה
+  'Uzziel': 'ʿUzziʾel',              // עֻזִּיאֵל
+  'Uzzielites': 'ʿUzziʾelites',
+  'Zaavan': 'Zaʿavan',               // זַעֲוָן
+  'Zibeon': 'Ṣivʿon',                // צִבְעוֹן — also tsadi
+  'Zoan': 'Ṣoʿan',                   // צֹעַן — also tsadi
+
+  // ===================== HET (ḥ) =====================
+
+  'Abel-meholah': 'Abel-Meḥolah',    // מְחוֹלָה
+  'Abihail': 'Aviḥayil',             // אֲבִיחַיִל
+  'Ahihud': 'Aḥihud',                // אֲחִיהוּד
+  'Ahiman': 'Aḥiman',                // אֲחִימָן
+  'Ahio': 'Aḥyo',                    // אַחְיוֹ
+  'Ahisamach': 'Aḥisamakh',          // אֲחִיסָמָךְ
+  'Ahuzzath': 'Aḥuzzat',             // אֲחֻזַּת
+  'Bahurim': 'Baḥurim',              // בַּחוּרִים
+  'Baruch': 'Barukh',                // בָּרוּךְ (kaf)
+  'Beer-lahai-roi': 'Beʾer-Laḥai-Roʾi', // לַחַי
+  'Cheran': 'Ḥeran',                 // חֵרָן — Horite chief
+  'Hananiah': 'Ḥananyah',            // חֲנַנְיָה
+  'Havilah': 'Ḥavilah',              // חֲוִילָה
+  'Hobah': 'Ḥobah',                  // חֹבָה
+  'Huldah': 'Ḥuldah',                // חֻלְדָּה
+  'Hushai': 'Ḥushai',                // חוּשַׁי
+  'Nahash': 'Naḥash',                // נָחָשׁ
+  'Rehob': 'Reḥov',                  // רְחֹב
+  'Shuah': 'Shuaḥ',                  // שׁוּחַ — Keturah's son
+  'Terah': 'Teraḥ',                  // תֶּרַח
+  'Zohar': 'Ṣoḥar',                  // צֹחַר — also tsadi
+
+  // ===================== TSADI (ṣ) =====================
+
+  'Amoz': 'ʾAmoṣ',                   // אָמוֹץ — Isaiah's father
+  'Bozrah': 'Boṣrah',                // בָּצְרָה
+  'Sidon': 'Ṣidon',                  // צִידוֹן
+  'Zalmonah': 'Ṣalmonah',            // צַלְמֹנָה
+  'Zaphenath-paneah': 'Ṣafnat-Paneaḥ', // צָפְנַת פַּעְנֵחַ — also ayin + ḥet
+  'Zarethan': 'Ṣarethan',            // צָרְתַן
+  'Zedad': 'Ṣedad',                  // צְדָד
+  'Zeboiim': 'Ṣevoyyim',             // צְבוֹיִם
+  'Zemarites': 'Ṣemarites',          // צְמָרִי
+  'Zeruiah': 'Ṣeruyah',              // צְרוּיָה
+  'Zuriel': 'Ṣuriʾel',               // צוּרִיאֵל
+  'Zurishaddai': 'Ṣurishaddai',      // צוּרִישַׁדַּי
+
+  // ===================== PEH → F =====================
+
+  'Abiasaph': 'Avyasaf',             // אֶבְיָסָף — final peh → f
+  'Amraphel': 'Amrafel',             // אַמְרָפֶל
+  'Arioch': 'Aryokh',                // אַרְיוֹךְ — kaf at end
+  'Bethuel': 'Bethuʾel',             // בְּתוּאֵל — aleph in middle
+  'Sheleph': 'Shelef',               // שֶׁלֶף — Joktan's son
+  'Shepham': 'Shefam',               // שְׁפָם — northern boundary
+  'Shepher': 'Shefer',               // שֶׁפֶר — campsite
+  'Shepho': 'Shefo',                 // שֶׁפוֹ — Shobal's son
+  'Shiphrah': 'Shifrah',             // שִׁפְרָה — midwife
+  'Shiphtan': 'Shiftan',             // שִׁפְטָן
+
+  // ===================== ADDITIONAL — BATCH 2 =====================
+
+  // Ayin
+  'Shimei': 'Shimʿi',               // שִׁמְעִי
+  'Shimeites': 'Shimʿites',
+  'Shinar': 'Shinʿar',              // שִׁנְעָר
+  'Taanach': 'Taʿanakh',            // תַּעֲנַךְ
+  'Tidal': 'Tidʿal',                // תִּדְעָל — king in Gen 14
+  'Zuar': 'Ṣuʿar',                  // צוּעָר — also tsadi
+
+  // Het
+  'Tahash': 'Taḥash',               // תַּחַשׁ — Nahor's son
+  'Tahath': 'Taḥat',                // תַּחַת — campsite / Levite name
+  'Harod': 'Ḥarod',                 // חֲרֹד — Gideon's spring
+  'Harosheth-hagoiim': 'Ḥaroshet-haGoyim', // חֲרֹשֶׁת הַגּוֹיִם — Sisera's city
+
+  // Tsadi
+  'Sitnah': 'Siṭnah',              // שִׂטְנָה — note: sin+ṭet; ṭ for tet
+  'Zadok': 'Ṣadoq',                 // צָדוֹק — tsadi + quf
+  'Zepho': 'Ṣefo',                  // צְפוֹ — Edomite chief
+  'Ziphion': 'Ṣifyon',              // צִפְיוֹן — Gad's son (Gen 46)
+  'Ziphron': 'Ṣifron',              // צִפְרֹן — northern boundary
+  'Zebulunite': 'Zevulunite',       // from Zevulun
+
+  // Quf
+  'Tubal-cain': 'Tuval-Qayin',      // תּוּבַל-קַיִן — quf in qayin
+
+  // J → Y
+  'Jaazaniah': 'Yaʾazanyahu',       // יַאֲזַנְיָהוּ — Ezekiel haftarot
 };
 
 // Remove no-op entries (where value equals key)
 const entries = Object.entries(TRANSLITERATIONS).filter(([k, v]) => k !== v);
 
+// Sort longest-first so compound names (e.g. "Beer-sheba") are tried before
+// their shorter prefixes (e.g. "Beer") in the alternation.
+const sortedKeys = [...entries].sort(([a], [b]) => b.length - a.length);
+
 const pattern = new RegExp(
-  `\\b(${entries.map(([k]) => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})\\b`,
+  `\\b(${sortedKeys.map(([k]) => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})\\b`,
   'g',
 );
 

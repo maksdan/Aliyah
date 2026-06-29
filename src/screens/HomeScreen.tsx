@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
@@ -13,7 +13,8 @@ import {
 import * as Clipboard from 'expo-clipboard';
 import AnnotatedText from '../components/AnnotatedText';
 import { DayReading, Verse, fetchTargumVerses, fetchTodayReading } from '../services/sefaria';
-import { Rite } from '../data/schedule';
+import { Rite, SEPHARDI_HAFTARAH } from '../data/schedule';
+import { GLOSSARY } from '../data/glossary';
 import { formatAliyotLabel } from '../utils/aliyah';
 import { cancelReminders, scheduleReminders } from '../services/notifications';
 import { getLastSeenStreak, isDateRead, markDateRead, markStreakBannerSeen, unmarkDateRead } from '../utils/storage';
@@ -150,6 +151,24 @@ export default function HomeScreen() {
     }
   };
 
+  // Pre-compute which glossary keys appear for the first time in each verse,
+  // so AnnotatedText highlights only the first occurrence across the whole reading.
+  const verseGlossaryKeys = useMemo(() => {
+    if (!reading) return [] as Set<string>[];
+    const seen = new Set<string>();
+    return reading.verses.map(verse => {
+      const allowed = new Set<string>();
+      for (const part of verse.en.split(/\s+/)) {
+        const key = part.replace(/^[^a-zA-Z]+|[^a-zA-Z]+$/g, '').toLowerCase();
+        if (GLOSSARY[key] && !seen.has(key)) {
+          seen.add(key);
+          allowed.add(key);
+        }
+      }
+      return allowed;
+    });
+  }, [reading]);
+
   // Full-screen spinner only on the very first load (no previous content to show).
   if (loading && !reading) {
     return (
@@ -243,8 +262,8 @@ export default function HomeScreen() {
         <Text style={styles.refLabel}>{reading.heRef}</Text>
         <Text style={styles.refLabelEn}>{reading.ref}</Text>
 
-        {/* Friday: Ashkenazi / Sephardi Haftarah toggle */}
-        {reading.isHaftarah && (
+        {/* Friday: Ashkenazi / Sephardi Haftarah toggle — only when the two rites differ */}
+        {reading.isHaftarah && SEPHARDI_HAFTARAH[reading.parashaEn] !== undefined && (
           <View style={styles.riteRow}>
             {RITES.map(({ key, label }) => (
               <Pressable
@@ -261,9 +280,9 @@ export default function HomeScreen() {
         )}
       </View>
 
-      {/* Language Tabs + Reading Time */}
+      {/* Language Tabs + Reading Time — mode tabs hidden for Haftarah (no Aramaic) */}
       <View style={styles.toggleRow}>
-        {MODES.map(({ key, label }) => (
+        {!reading.isHaftarah && MODES.map(({ key, label }) => (
           <Pressable
             key={key}
             style={[styles.toggleBtn, mode === key && styles.toggleBtnActive]}
@@ -304,6 +323,7 @@ export default function HomeScreen() {
                 <AnnotatedText
                   text={verse.en}
                   style={styles.englishText}
+                  allowedKeys={verseGlossaryKeys[i]}
                   onWordPress={(word, definition) => setGlossaryWord({ word, definition })}
                 />
               )}

@@ -25,7 +25,6 @@ export const GLOSSARY: Record<string, string> = {
   fowls: 'Birds, especially those hunted or raised for food',
   ass: 'A donkey',
   asses: 'Donkeys',
-  oxen: 'Adult cattle used for plowing and hauling (plural of ox)',
   swine: 'Pigs',
   brethren: 'Brothers; kinsmen (archaic plural of "brother")',
   damsel: 'A young unmarried woman',
@@ -82,6 +81,21 @@ export const GLOSSARY: Record<string, string> = {
   ephah: 'Eifah — unit of dry measure, about 22 liters',
   seah: 'Seʾah — unit of dry measure, about 7 liters',
   omer: 'ʿOmer — unit of dry measure, about 2.3 liters',
+
+  // Agricultural / material culture
+  yoke: 'A wooden frame fastened over the necks of two animals to pull a load together',
+  yokes: 'Wooden frames fastened over the necks of animals to pull a load; also a metaphor for oppression',
+  threshed: 'Had grain beaten from its stalks',
+  smite: 'To strike hard; to defeat or destroy',
+  smiting: 'Striking hard; dealing a blow',
+  cistern: 'An underground pit or tank for storing rainwater',
+  staves: 'Wooden poles or rods; a staff or stick',
+  loins: 'The area of the hips and lower abdomen; in biblical usage, the seat of strength or procreation',
+  provender: 'Feed or fodder for livestock',
+  bulwark: 'A defensive wall or rampart; any strong protection',
+  travail: 'Painful or exhausting labor; to endure great hardship',
+  burnished: 'Polished to a bright, gleaming finish',
+  repast: 'A meal',
 
   // Less common English
   sojourn: 'To live somewhere temporarily; a temporary stay',
