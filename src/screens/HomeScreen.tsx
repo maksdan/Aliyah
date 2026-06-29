@@ -11,19 +11,18 @@ import {
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import AnnotatedText from '../components/AnnotatedText';
-import { DayReading, Verse, fetchTodayReading } from '../services/sefaria';
+import { DayReading, Verse, fetchTargumVerses, fetchTodayReading } from '../services/sefaria';
 import { Rite } from '../data/schedule';
 import { formatAliyotLabel } from '../utils/aliyah';
 import { cancelReminders, scheduleReminders } from '../services/notifications';
 import { getLastSeenStreak, isTodayRead, markStreakBannerSeen, markTodayRead, unmarkTodayRead } from '../utils/storage';
 import { refreshWeeklyStreak } from '../utils/tracker';
 
-type DisplayMode = 'hebrew' | 'english' | 'both';
+type DisplayMode = 'bilingual' | 'targum';
 
 const MODES: { key: DisplayMode; label: string }[] = [
-  { key: 'hebrew', label: 'עברית' },
-  { key: 'english', label: 'English' },
-  { key: 'both', label: 'Both' },
+  { key: 'bilingual', label: 'Hebrew & English' },
+  { key: 'targum', label: 'Hebrew & Aramaic' },
 ];
 
 const RITES: { key: Rite; label: string }[] = [
@@ -33,13 +32,12 @@ const RITES: { key: Rite; label: string }[] = [
 
 // Scripture is wrapped in guillemets « » rather than quotation marks so it can't
 // be confused with the speech quotes that appear inside the verses themselves.
-// A single pair wraps the whole block, so in bilingual mode the Hebrew and
-// English are wrapped together as one quotation.
-function buildShareText(book: string, verse: Verse, mode: DisplayMode): string {
+function buildShareText(book: string, verse: Verse, mode: DisplayMode, targumVerse?: Verse): string {
   const source = `${book} ${verse.ref}`.trim();
   const lines: string[] = [];
-  if ((mode === 'hebrew' || mode === 'both') && verse.he) lines.push(verse.he);
-  if ((mode === 'english' || mode === 'both') && verse.en) lines.push(verse.en);
+  if (verse.he) lines.push(verse.he);
+  if (mode === 'bilingual' && verse.en) lines.push(verse.en);
+  if (mode === 'targum' && targumVerse?.he) lines.push(targumVerse.he);
   return `«${lines.join('\n')}»\n— ${source}`;
 }
 
@@ -47,7 +45,10 @@ export default function HomeScreen() {
   const [reading, setReading] = useState<DayReading | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [mode, setMode] = useState<DisplayMode>('both');
+  const [mode, setMode] = useState<DisplayMode>('bilingual');
+  const [targumVerses, setTargumVerses] = useState<Verse[] | null>(null);
+  const [targumLoading, setTargumLoading] = useState(false);
+  const [targumUnavailable, setTargumUnavailable] = useState(false);
   const [rite, setRite] = useState<Rite>('ashkenazi');
   const [isRead, setIsRead] = useState(false);
   const [streak, setStreak] = useState(0);
@@ -60,6 +61,9 @@ export default function HomeScreen() {
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setMode('bilingual');
+    setTargumVerses(null);
+    setTargumUnavailable(false);
     try {
       const [result, read] = await Promise.all([fetchTodayReading(rite), isTodayRead()]);
       setReading(result);
@@ -88,9 +92,20 @@ export default function HomeScreen() {
     if (copiedTimer.current) clearTimeout(copiedTimer.current);
   }, []);
 
+  const handleModeChange = useCallback(async (newMode: DisplayMode) => {
+    setMode(newMode);
+    if (newMode === 'targum' && !targumVerses && !targumLoading && !targumUnavailable && reading) {
+      setTargumLoading(true);
+      const verses = await fetchTargumVerses(reading.ref);
+      setTargumLoading(false);
+      if (verses) setTargumVerses(verses);
+      else setTargumUnavailable(true);
+    }
+  }, [targumVerses, targumLoading, targumUnavailable, reading]);
+
   const handleCopyVerse = useCallback(
-    async (book: string, verse: Verse, key: string) => {
-      await Clipboard.setStringAsync(buildShareText(book, verse, mode));
+    async (book: string, verse: Verse, key: string, targumVerse?: Verse) => {
+      await Clipboard.setStringAsync(buildShareText(book, verse, mode, targumVerse));
       setCopiedKey(key);
       if (copiedTimer.current) clearTimeout(copiedTimer.current);
       copiedTimer.current = setTimeout(() => setCopiedKey(null), 1500);
@@ -190,13 +205,13 @@ export default function HomeScreen() {
         )}
       </View>
 
-      {/* Language Toggle + Reading Time */}
+      {/* Language Tabs + Reading Time */}
       <View style={styles.toggleRow}>
         {MODES.map(({ key, label }) => (
           <Pressable
             key={key}
             style={[styles.toggleBtn, mode === key && styles.toggleBtnActive]}
-            onPress={() => setMode(key)}
+            onPress={() => handleModeChange(key)}
           >
             <Text style={[styles.toggleText, mode === key && styles.toggleTextActive]}>
               {label}
@@ -212,36 +227,48 @@ export default function HomeScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {reading.verses.map((verse, i) => (
-          <View key={i} style={styles.verseBlock}>
-            <View style={styles.verseNumberRow}>
-              <Text style={styles.verseNumber}>{i + 1}</Text>
-              <Text style={styles.verseRef}>{verse.ref}</Text>
-            </View>
-            {(mode === 'hebrew' || mode === 'both') && (
+        {mode === 'targum' && targumLoading && (
+          <ActivityIndicator color={BROWN} style={{ marginBottom: 16 }} />
+        )}
+        {mode === 'targum' && targumUnavailable && (
+          <Text style={styles.targumNote}>
+            Targum Onkelos is not available for this reading.
+          </Text>
+        )}
+        {reading.verses.map((verse, i) => {
+          const targumVerse = targumVerses?.[i];
+          return (
+            <View key={i} style={styles.verseBlock}>
+              <View style={styles.verseNumberRow}>
+                <Text style={styles.verseNumber}>{i + 1}</Text>
+                <Text style={styles.verseRef}>{verse.ref}</Text>
+              </View>
               <Text style={styles.hebrewText}>{verse.he}</Text>
-            )}
-            {(mode === 'english' || mode === 'both') && (
-              <AnnotatedText
-                text={verse.en}
-                style={styles.englishText}
-                onWordPress={(word, definition) => setGlossaryWord({ word, definition })}
-              />
-            )}
-            <View style={styles.copyRow}>
-              <TouchableOpacity
-                onPress={() => handleCopyVerse(reading.book, verse, `${i}`)}
-                hitSlop={8}
-                accessibilityLabel="Copy verse"
-              >
-                <Text style={styles.copyBtn}>
-                  {copiedKey === `${i}` ? '✓' : '⧉'}
-                </Text>
-              </TouchableOpacity>
+              {mode === 'bilingual' && (
+                <AnnotatedText
+                  text={verse.en}
+                  style={styles.englishText}
+                  onWordPress={(word, definition) => setGlossaryWord({ word, definition })}
+                />
+              )}
+              {mode === 'targum' && targumVerse && (
+                <Text style={styles.targumText}>{targumVerse.he}</Text>
+              )}
+              <View style={styles.copyRow}>
+                <TouchableOpacity
+                  onPress={() => handleCopyVerse(reading.book, verse, `${i}`, targumVerse)}
+                  hitSlop={8}
+                  accessibilityLabel="Copy verse"
+                >
+                  <Text style={styles.copyBtn}>
+                    {copiedKey === `${i}` ? '✓' : '⧉'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              {i < reading.verses.length - 1 && <View style={styles.verseDivider} />}
             </View>
-            {i < reading.verses.length - 1 && <View style={styles.verseDivider} />}
-          </View>
-        ))}
+          );
+        })}
       </ScrollView>
 
       {/* Glossary Popup */}
@@ -478,6 +505,23 @@ const styles = StyleSheet.create({
     textAlign: 'left',
     marginBottom: 6,
     fontStyle: 'italic',
+  },
+  targumText: {
+    fontFamily: 'NotoSerifHebrew_400Regular',
+    fontSize: 19,
+    lineHeight: 34,
+    color: '#5C3D1E',
+    textAlign: 'right',
+    writingDirection: 'rtl',
+    marginBottom: 6,
+    opacity: 0.85,
+  },
+  targumNote: {
+    fontSize: 14,
+    color: MID,
+    textAlign: 'center',
+    fontStyle: 'italic',
+    marginBottom: 16,
   },
   verseDivider: {
     height: 1,

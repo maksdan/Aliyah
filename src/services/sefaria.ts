@@ -184,6 +184,18 @@ async function fetchCurrentParasha(): Promise<{ en: string; he: string }> {
   return { en: parasha.displayValue.en, he: parasha.displayValue.he };
 }
 
+// Fetch Targum Onkelos for a Torah ref. Returns null for haftarah (multi-part
+// refs with ";") or when Onkelos isn't available for the passage.
+export async function fetchTargumVerses(ref: string): Promise<Verse[] | null> {
+  if (ref.includes(';')) return null; // haftarah — no Onkelos
+  try {
+    const { verses } = await fetchOneRef(`Onkelos ${ref}`);
+    return verses.length > 0 ? verses : null;
+  } catch {
+    return null;
+  }
+}
+
 // Fetch today's reading per the static schedule. Returns null on Shabbat (no
 // reading) or when the current parasha isn't in the schedule. `rite` only
 // affects the Friday Haftarah.
