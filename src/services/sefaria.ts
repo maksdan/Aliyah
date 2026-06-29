@@ -171,8 +171,15 @@ async function fetchRef(ref: string): Promise<RefText> {
   };
 }
 
-async function fetchCurrentParasha(): Promise<{ en: string; he: string }> {
-  const calRes = await fetch(`${BASE}/calendars?diaspora=1`);
+async function fetchCurrentParasha(date?: Date): Promise<{ en: string; he: string }> {
+  let url = `${BASE}/calendars?diaspora=1`;
+  if (date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    url += `&date=${y}-${m}-${d}`;
+  }
+  const calRes = await fetch(url);
   if (!calRes.ok) throw new Error('Could not load calendar from Sefaria');
   const cal: CalendarResponse = await calRes.json();
 
@@ -199,11 +206,11 @@ export async function fetchTargumVerses(ref: string): Promise<Verse[] | null> {
 // Fetch today's reading per the static schedule. Returns null on Shabbat (no
 // reading) or when the current parasha isn't in the schedule. `rite` only
 // affects the Friday Haftarah.
-export async function fetchTodayReading(rite: Rite): Promise<DayReading | null> {
-  const weekday = new Date().getDay();
+export async function fetchTodayReading(rite: Rite, date: Date = new Date()): Promise<DayReading | null> {
+  const weekday = date.getDay();
   if (weekday === 6) return null; // Shabbat — no reading
 
-  const parasha = await fetchCurrentParasha();
+  const parasha = await fetchCurrentParasha(date);
   const schedule = getParashaSchedule(parasha.en);
   if (!schedule) throw new Error(`No schedule found for "${parasha.en}"`);
 

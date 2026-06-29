@@ -15,7 +15,7 @@ import { DayReading, Verse, fetchTargumVerses, fetchTodayReading } from '../serv
 import { Rite } from '../data/schedule';
 import { formatAliyotLabel } from '../utils/aliyah';
 import { cancelReminders, scheduleReminders } from '../services/notifications';
-import { getLastSeenStreak, isTodayRead, markStreakBannerSeen, markTodayRead, unmarkTodayRead } from '../utils/storage';
+import { getLastSeenStreak, isDateRead, markDateRead, markStreakBannerSeen, unmarkDateRead } from '../utils/storage';
 import { refreshWeeklyStreak } from '../utils/tracker';
 
 type DisplayMode = 'bilingual' | 'targum';
@@ -45,6 +45,7 @@ export default function HomeScreen() {
   const [reading, setReading] = useState<DayReading | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [offsetDays, setOffsetDays] = useState(0);
   const [mode, setMode] = useState<DisplayMode>('bilingual');
   const [targumVerses, setTargumVerses] = useState<Verse[] | null>(null);
   const [targumLoading, setTargumLoading] = useState(false);
@@ -64,8 +65,10 @@ export default function HomeScreen() {
     setMode('bilingual');
     setTargumVerses(null);
     setTargumUnavailable(false);
+    const target = new Date();
+    target.setDate(target.getDate() + offsetDays);
     try {
-      const [result, read] = await Promise.all([fetchTodayReading(rite), isTodayRead()]);
+      const [result, read] = await Promise.all([fetchTodayReading(rite, target), isDateRead(target)]);
       setReading(result);
       setIsRead(read);
       if (result === null || read) cancelReminders();
@@ -82,7 +85,7 @@ export default function HomeScreen() {
     } finally {
       setLoading(false);
     }
-  }, [rite]);
+  }, [rite, offsetDays]);
 
   useEffect(() => {
     load();
@@ -114,12 +117,14 @@ export default function HomeScreen() {
   );
 
   const handleToggleRead = async () => {
+    const target = new Date();
+    target.setDate(target.getDate() + offsetDays);
     if (isRead) {
-      await unmarkTodayRead();
+      await unmarkDateRead(target);
       setIsRead(false);
       scheduleReminders();
     } else {
-      await markTodayRead();
+      await markDateRead(target);
       setIsRead(true);
       cancelReminders();
     }
@@ -152,10 +157,30 @@ export default function HomeScreen() {
     );
   }
 
+  const targetDate = new Date();
+  targetDate.setDate(targetDate.getDate() + offsetDays);
+  const navLabel = offsetDays === -1 ? 'Yesterday'
+    : offsetDays === 1 ? 'Tomorrow'
+    : offsetDays === 0 ? ''
+    : targetDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+
+  const navRow = (
+    <View style={styles.navRow}>
+      <Pressable onPress={() => setOffsetDays(o => o - 1)} hitSlop={16}>
+        <Text style={styles.navArrow}>‹</Text>
+      </Pressable>
+      <Text style={styles.navLabel}>{navLabel}</Text>
+      <Pressable onPress={() => setOffsetDays(o => o + 1)} hitSlop={16}>
+        <Text style={styles.navArrow}>›</Text>
+      </Pressable>
+    </View>
+  );
+
   if (!reading) {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
+          {navRow}
           <Text style={styles.parashaHe}>שבת שלום</Text>
           <Text style={styles.parashaEn}>Shabbat Shalom</Text>
           <Text style={styles.aliyahLabel}>No reading today — enjoy your Shabbat!</Text>
@@ -178,6 +203,7 @@ export default function HomeScreen() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
+        {navRow}
         <Text style={styles.parashaHe}>{reading.parashaHe}</Text>
         <Text style={styles.parashaEn}>Parshat {reading.parashaEn}</Text>
         <Text style={styles.aliyahLabel}>
@@ -352,6 +378,25 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     paddingHorizontal: 20,
     alignItems: 'center',
+  },
+  navRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+    marginBottom: 8,
+  },
+  navArrow: {
+    fontSize: 30,
+    color: '#F5DEB3',
+    lineHeight: 34,
+    paddingHorizontal: 4,
+  },
+  navLabel: {
+    fontSize: 11,
+    color: '#D4B896',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
   parashaHe: {
     fontSize: 28,

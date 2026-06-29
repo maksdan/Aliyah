@@ -1,21 +1,30 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-function todayKey(): string {
-  const d = new Date();
+function dateKey(d: Date): string {
   return `read_${d.getFullYear()}_${d.getMonth() + 1}_${d.getDate()}`;
 }
 
-export async function markTodayRead(): Promise<void> {
-  await AsyncStorage.setItem(todayKey(), '1');
+export async function isDateRead(date: Date): Promise<boolean> {
+  return (await AsyncStorage.getItem(dateKey(date))) === '1';
 }
 
-export async function unmarkTodayRead(): Promise<void> {
-  await AsyncStorage.removeItem(todayKey());
+export async function markDateRead(date: Date): Promise<void> {
+  await AsyncStorage.setItem(dateKey(date), '1');
 }
 
+export async function unmarkDateRead(date: Date): Promise<void> {
+  await AsyncStorage.removeItem(dateKey(date));
+}
+
+// Convenience wrappers for today — kept for any callers that don't navigate.
 export async function isTodayRead(): Promise<boolean> {
-  const val = await AsyncStorage.getItem(todayKey());
-  return val === '1';
+  return isDateRead(new Date());
+}
+export async function markTodayRead(): Promise<void> {
+  return markDateRead(new Date());
+}
+export async function unmarkTodayRead(): Promise<void> {
+  return unmarkDateRead(new Date());
 }
 
 const STREAK_BANNER_KEY = 'streak_banner_seen';
