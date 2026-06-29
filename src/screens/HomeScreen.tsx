@@ -21,8 +21,8 @@ import { refreshWeeklyStreak } from '../utils/tracker';
 type DisplayMode = 'bilingual' | 'targum';
 
 const MODES: { key: DisplayMode; label: string }[] = [
-  { key: 'bilingual', label: 'Hebrew & English' },
-  { key: 'targum', label: 'Hebrew & Aramaic' },
+  { key: 'bilingual', label: 'English' },
+  { key: 'targum', label: 'Aramaic' },
 ];
 
 const RITES: { key: Rite; label: string }[] = [
