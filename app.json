@@ -17,8 +17,7 @@
       "bundleIdentifier": "com.danielmaksumov.parashah-aliyah",
       "infoPlist": {
         "UIBackgroundModes": [
-          "fetch",
-          "remote-notification"
+          "fetch"
         ]
       }
     },

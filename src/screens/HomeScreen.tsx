@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Animated,
   Modal,
   Pressable,
   ScrollView,
@@ -30,8 +31,6 @@ const RITES: { key: Rite; label: string }[] = [
   { key: 'sephardi', label: 'Sephardi' },
 ];
 
-// Scripture is wrapped in guillemets « » rather than quotation marks so it can't
-// be confused with the speech quotes that appear inside the verses themselves.
 function buildShareText(book: string, verse: Verse, mode: DisplayMode, targumVerse?: Verse): string {
   const source = `${book} ${verse.ref}`.trim();
   const lines: string[] = [];
@@ -57,7 +56,18 @@ export default function HomeScreen() {
   const [glossaryWord, setGlossaryWord] = useState<{ word: string; definition: string } | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const copiedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const toastAnim = useRef(new Animated.Value(0)).current;
 
+  // Animate streak toast in, hold, then fade out.
+  useEffect(() => {
+    if (!showStreakBanner) return;
+    toastAnim.setValue(0);
+    Animated.sequence([
+      Animated.timing(toastAnim, { toValue: 1, duration: 250, useNativeDriver: true }),
+      Animated.delay(2500),
+      Animated.timing(toastAnim, { toValue: 0, duration: 400, useNativeDriver: true }),
+    ]).start(() => setShowStreakBanner(false));
+  }, [showStreakBanner, toastAnim]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -71,8 +81,11 @@ export default function HomeScreen() {
       const [result, read] = await Promise.all([fetchTodayReading(rite, target), isDateRead(target)]);
       setReading(result);
       setIsRead(read);
-      if (result === null || read) cancelReminders();
-      else scheduleReminders();
+      // Only manage reminders based on today's reading, not a navigated day.
+      if (offsetDays === 0) {
+        if (result === null || read) cancelReminders();
+        else scheduleReminders();
+      }
       const newStreak = await refreshWeeklyStreak();
       setStreak(newStreak);
       const lastSeen = await getLastSeenStreak();
@@ -122,11 +135,11 @@ export default function HomeScreen() {
     if (isRead) {
       await unmarkDateRead(target);
       setIsRead(false);
-      scheduleReminders();
+      if (offsetDays === 0) scheduleReminders();
     } else {
       await markDateRead(target);
       setIsRead(true);
-      cancelReminders();
+      if (offsetDays === 0) cancelReminders();
     }
     const newStreak = await refreshWeeklyStreak();
     setStreak(newStreak);
@@ -137,7 +150,8 @@ export default function HomeScreen() {
     }
   };
 
-  if (loading) {
+  // Full-screen spinner only on the very first load (no previous content to show).
+  if (loading && !reading) {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" color="#8B4513" />
@@ -166,12 +180,28 @@ export default function HomeScreen() {
 
   const navRow = (
     <View style={styles.navRow}>
-      <Pressable onPress={() => setOffsetDays(o => o - 1)} hitSlop={16}>
-        <Text style={styles.navArrow}>‹</Text>
+      <Pressable
+        onPress={() => setOffsetDays(o => o - 1)}
+        hitSlop={16}
+        disabled={loading}
+        accessibilityLabel="Previous day"
+      >
+        <Text style={[styles.navArrow, loading && styles.navArrowDisabled]}>‹</Text>
       </Pressable>
-      <Text style={styles.navLabel}>{navLabel}</Text>
-      <Pressable onPress={() => setOffsetDays(o => o + 1)} hitSlop={16}>
-        <Text style={styles.navArrow}>›</Text>
+      {offsetDays !== 0 ? (
+        <Pressable onPress={() => setOffsetDays(0)} hitSlop={8} accessibilityLabel="Return to today">
+          <Text style={[styles.navLabel, styles.navLabelTappable]}>{navLabel}</Text>
+        </Pressable>
+      ) : (
+        <Text style={styles.navLabel}>{navLabel}</Text>
+      )}
+      <Pressable
+        onPress={() => setOffsetDays(o => o + 1)}
+        hitSlop={16}
+        disabled={loading}
+        accessibilityLabel="Next day"
+      >
+        <Text style={[styles.navArrow, loading && styles.navArrowDisabled]}>›</Text>
       </Pressable>
     </View>
   );
@@ -183,10 +213,10 @@ export default function HomeScreen() {
           {navRow}
           <Text style={styles.parashaHe}>שבת שלום</Text>
           <Text style={styles.parashaEn}>Shabbat Shalom</Text>
-          <Text style={styles.aliyahLabel}>No reading today — enjoy your Shabbat!</Text>
+          <Text style={styles.aliyahLabel}>No reading on Shabbat</Text>
         </View>
         <View style={styles.center}>
-          <Text style={styles.shabbatText}>Rest and recharge. Your next reading is on Sunday.</Text>
+          <Text style={styles.shabbatText}>Rest and recharge.</Text>
         </View>
       </View>
     );
@@ -314,20 +344,34 @@ export default function HomeScreen() {
 
       {/* Mark as Read */}
       <View style={styles.footer}>
-        {showStreakBanner && (
-          <Text style={styles.streakText}>
-            {streak} week{streak === 1 ? '' : 's'} in a row · keep it up!
-          </Text>
-        )}
         <TouchableOpacity
           style={[styles.readBtn, isRead && styles.readBtnDone]}
           onPress={handleToggleRead}
         >
           <Text style={styles.readBtnText}>
-            {isRead ? '✓ Read Today' : 'Mark as Read'}
+            {isRead ? `✓ Read${offsetDays === 0 ? ' Today' : ''}` : 'Mark as Read'}
           </Text>
         </TouchableOpacity>
       </View>
+
+      {/* Streak toast — floats above footer, auto-dismisses */}
+      {showStreakBanner && (
+        <Animated.View style={[styles.toast, {
+          opacity: toastAnim,
+          transform: [{ translateY: toastAnim.interpolate({ inputRange: [0, 1], outputRange: [16, 0] }) }],
+        }]}>
+          <Text style={styles.toastText}>
+            {streak} week{streak === 1 ? '' : 's'} in a row · keep it up!
+          </Text>
+        </Animated.View>
+      )}
+
+      {/* Subtle overlay while navigating between days */}
+      {loading && (
+        <View style={styles.loadingOverlay} pointerEvents="none">
+          <ActivityIndicator size="large" color={BROWN} />
+        </View>
+      )}
     </View>
   );
 }
@@ -392,11 +436,18 @@ const styles = StyleSheet.create({
     lineHeight: 34,
     paddingHorizontal: 4,
   },
+  navArrowDisabled: {
+    opacity: 0.3,
+  },
   navLabel: {
     fontSize: 11,
     color: '#D4B896',
     letterSpacing: 0.5,
     textTransform: 'uppercase',
+  },
+  navLabelTappable: {
+    color: '#F5DEB3',
+    textDecorationLine: 'underline',
   },
   parashaHe: {
     fontSize: 28,
@@ -596,14 +647,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.4,
   },
-  streakText: {
-    textAlign: 'center',
-    color: BROWN,
-    fontSize: 13,
-    fontWeight: '600',
-    letterSpacing: 0.3,
-    marginBottom: 10,
-  },
   readingTime: {
     fontSize: 12,
     color: MID,
@@ -615,6 +658,38 @@ const styles = StyleSheet.create({
     color: MID,
     textAlign: 'center',
     lineHeight: 26,
+  },
+  toast: {
+    position: 'absolute',
+    bottom: 110,
+    left: 24,
+    right: 24,
+    backgroundColor: BROWN,
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  toastText: {
+    color: PARCHMENT,
+    fontSize: 14,
+    fontWeight: '600',
+    letterSpacing: 0.3,
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(253, 246, 227, 0.65)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   modalOverlay: {
     flex: 1,
