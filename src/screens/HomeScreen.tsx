@@ -161,7 +161,7 @@ export default function HomeScreen() {
   targetDate.setDate(targetDate.getDate() + offsetDays);
   const navLabel = offsetDays === -1 ? 'Yesterday'
     : offsetDays === 1 ? 'Tomorrow'
-    : offsetDays === 0 ? ''
+    : offsetDays === 0 ? 'Today'
     : targetDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 
   const navRow = (
