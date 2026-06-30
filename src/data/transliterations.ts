@@ -101,7 +101,7 @@ const TRANSLITERATIONS: Record<string, string> = {
   'Korah': 'Qoraḥ',
   'Korahites': 'Qoraḥites',
   'Abiram': 'Aviram',
-  'Dathan': 'Datan',
+  // Dathan: JPS "Dathan" already reflects thav — entry removed (no-op)
   'Sihon': 'Siḥon',
   'Balak': 'Balaq',
   'Balaam': 'Bilʿam',
@@ -135,6 +135,7 @@ const TRANSLITERATIONS: Record<string, string> = {
   'Eliasaph': 'Elyasaf',
   'Chemosh': 'Kemosh',
   'Abihu': 'Avihu',
+  'Nadab': 'Nadav',                  // נָדָב — final ב after vowel = vet
   'Zur': 'Ṣur',
   'Midian': 'Midyan',
 
@@ -262,10 +263,10 @@ const TRANSLITERATIONS: Record<string, string> = {
 
   'Samuel': 'Shemuʾel',
   'Saul': 'Shaʾul',
-  'Jonathan': 'Yonatan',
+  'Jonathan': 'Yonathan',
   'David': 'David',
   'Solomon': 'Shelomoh',
-  'Nathan': 'Natan',
+  // Nathan: JPS "Nathan" already reflects thav — entry removed (no-op)
   'Joab': 'Yoʾav',
   'Abner': 'Avner',
   'Shaphat': 'Shafaṭ',
@@ -322,7 +323,7 @@ const TRANSLITERATIONS: Record<string, string> = {
   'Naomi': 'Noʿomi',
   'Orpah': 'ʿOrpah',
   'Obed': 'ʿOved',
-  'Ruth': 'Rut',
+  // Ruth: JPS "Ruth" already reflects thav — entry removed (no-op)
   'Elimelech': 'Elimelekh',
 
   // ===================== PLACES =====================
@@ -374,8 +375,8 @@ const TRANSLITERATIONS: Record<string, string> = {
   'Jokneam': 'Yoqneʿam',
   'Zion': 'Ṣiyyon',
   'Zorah': 'Ṣorʿah',
-  'Zarephath': 'Ṣarefat',
-  'Elath': 'ʾElat',
+  'Zarephath': 'Ṣarefath',           // צָרְפַת — final ת = thav
+  'Elath': 'ʾElath',                 // אֵילַת — final ת = thav
 
   // ===================== NATIONS & PEOPLES =====================
 
@@ -432,7 +433,7 @@ const TRANSLITERATIONS: Record<string, string> = {
   'Jalam': 'Yaʿlam',                 // יַעְלָם — also ayin
   'Jashobeam': 'Yashobʿam',          // יָשׇׁבְעָם — also ayin
   'Jeconiah': 'Yekhonyah',           // יְכׇנְיָה
-  'Jeduthun': 'Yedutun',             // יְדוּתוּן
+  'Jeduthun': 'Yeduthun',             // יְדוּתוּן — ת after vowel = thav
   'Jehiel': 'Yeḥiʾel',               // יְחִיאֵל — also ḥet
   'Jehoahaz': 'Yehoʾaḥaz',           // יְהוֹאָחָז — also ḥet
   'Jehoash': 'Yehoʾash',             // יְהוֹאָשׁ
@@ -443,7 +444,7 @@ const TRANSLITERATIONS: Record<string, string> = {
   'Jeruel': 'Yeruʾel',               // יְרוּאֵל
   'Jeshimon': 'Yeshimon',            // יְשִׁימוֹן
   'Jetheth': 'Yeteth',               // יְתֵת
-  'Jetur': 'Yetur',                  // יְטוּר
+  'Jetur': 'Yeṭur',                  // יְטוּר — ט = ṭ
   'Jeuel': 'Yeʿiʾel',                // יְעִיאֵל — variant of Jeiel
   'Jeush': 'Yeʿush',                 // יְעוּשׁ — also ayin
   'Jidlaph': 'Yidlaf',               // יִדְלָף — also peh → f
@@ -453,11 +454,11 @@ const TRANSLITERATIONS: Record<string, string> = {
   'Joram': 'Yoram',                  // יוֹרָם
   'Josiah': 'Yoshiyyahu',            // יֹאשִׁיָּהוּ
   'Jubal': 'Yuval',                  // יוּבָל
-  'Judith': 'Yehudit',               // יְהוּדִית
+  'Judith': 'Yehudith',               // יְהוּדִית — final ת = thav
   'Benjaminite': 'Binyaminite',
   'Benjaminites': 'Binyaminites',
   'Bene-jaakan': 'Bene-Yaʿaqan',     // also ayin
-  'Beeroth-bene-jaakan': 'Beerot-Bene-Yaʿaqan',
+  'Beeroth-bene-jaakan': 'Beeroth-Bene-Yaʿaqan',  // בְּאֵרֹת — final ת = thav
 
   // ===================== AYIN (ʿ) =====================
 
@@ -471,7 +472,7 @@ const TRANSLITERATIONS: Record<string, string> = {
   'Ain': 'ʿAyin',                    // עַיִן
   'Akan': 'ʿAqan',                   // עָקָן — also quf
   'Akrabbim': 'ʿAqrabbim',           // עַקְרַבִּים — also quf
-  'Almon-diblathaim': 'ʿAlmon-Divlatayim', // עַלְמֹן
+  'Almon-diblathaim': 'ʿAlmon-Divlathaim', // עַלְמֹן דִּבְלָתַיְמָה — ת after vowel = thav
   'Alvah': 'ʿAlvah',                 // עַלְוָה
   'Alvan': 'ʿAlvan',                 // עַלְוָן
   'Amasa': 'ʿAmasa',                 // עֲמָשָׂא
@@ -484,16 +485,16 @@ const TRANSLITERATIONS: Record<string, string> = {
   'Anah': 'ʿAnah',                   // עֲנָה
   'Anak': 'ʿAnaq',                   // עֲנָק — also quf
   'Anakites': 'ʿAnaqites',
-  'Anath': 'ʿAnat',                  // עֲנָת
-  'Anathoth': 'ʿAnatot',             // עֲנָתוֹת
+  'Anath': 'ʿAnath',                 // עֲנָת — final ת = thav
+  'Anathoth': 'ʿAnatoth',            // עֲנָתוֹת — final ת = thav
   'Arabah': 'ʿAravah',               // עֲרָבָה
   'Arod': 'ʿArod',                   // עֲרוֹד
   'Arodi': 'ʿArodi',
   'Arodites': 'ʿArodites',
-  'Ashtaroth': 'ʿAshtarot',          // עַשְׁתָּרוֹת
-  'Ashteroth-karnaim': 'ʿAshtarot-Qarnayim', // also quf
-  'Ataroth': 'ʿAtarot',              // עֲטָרוֹת
-  'Atroth-shophan': 'ʿAtrot-Shofan', // עַטְרֹת שׁוֹפָן — also peh → f
+  'Ashtaroth': 'ʿAshtaroth',         // עַשְׁתָּרוֹת — final ת = thav
+  'Ashteroth-karnaim': 'ʿAshtaroth-Qarnayim', // final ת = thav; also quf
+  'Ataroth': 'ʿAtaroth',             // עֲטָרוֹת — final ת = thav
+  'Atroth-shophan': 'ʿAtroth-Shofan', // עַטְרֹת שׁוֹפָן — ת = thav; also peh → f
   'Avvim': 'ʿAwwim',                 // עַוִּים
   'Azazel': 'ʿAzaʾzel',              // עֲזָאזֵל
   'Azmon': 'ʿAṣmon',                 // עַצְמוֹן — also tsadi
@@ -539,14 +540,14 @@ const TRANSLITERATIONS: Record<string, string> = {
   'Ahiman': 'Aḥiman',                // אֲחִימָן
   'Ahio': 'Aḥyo',                    // אַחְיוֹ
   'Ahisamach': 'Aḥisamakh',          // אֲחִיסָמָךְ
-  'Ahuzzath': 'Aḥuzzat',             // אֲחֻזַּת
+  'Ahuzzath': 'Aḥuzzath',            // אֲחֻזַּת — final ת = thav
   'Bahurim': 'Baḥurim',              // בַּחוּרִים
   'Baruch': 'Barukh',                // בָּרוּךְ (kaf)
   'Beer-lahai-roi': 'Beʾer-Laḥai-Roʾi', // לַחַי
   'Cheran': 'Ḥeran',                 // חֵרָן — Horite chief
   'Hananiah': 'Ḥananyah',            // חֲנַנְיָה
   'Havilah': 'Ḥavilah',              // חֲוִילָה
-  'Hobah': 'Ḥobah',                  // חֹבָה
+  'Hobah': 'Ḥovah',                  // חֹבָה — ב after vowel = vet
   'Huldah': 'Ḥuldah',                // חֻלְדָּה
   'Hushai': 'Ḥushai',                // חוּשַׁי
   'Nahash': 'Naḥash',                // נָחָשׁ
@@ -581,7 +582,7 @@ const TRANSLITERATIONS: Record<string, string> = {
   'Shepher': 'Shefer',               // שֶׁפֶר — campsite
   'Shepho': 'Shefo',                 // שֶׁפוֹ — Shobal's son
   'Shiphrah': 'Shifrah',             // שִׁפְרָה — midwife
-  'Shiphtan': 'Shiftan',             // שִׁפְטָן
+  'Shiphtan': 'Shifṭan',             // שִׁפְטָן — ט = ṭ; also peh → f
 
   // ===================== ADDITIONAL — BATCH 2 =====================
 
@@ -595,9 +596,9 @@ const TRANSLITERATIONS: Record<string, string> = {
 
   // Het
   'Tahash': 'Taḥash',               // תַּחַשׁ — Nahor's son
-  'Tahath': 'Taḥat',                // תַּחַת — campsite / Levite name
+  'Tahath': 'Taḥath',               // תַּחַת — final ת = thav
   'Harod': 'Ḥarod',                 // חֲרֹד — Gideon's spring
-  'Harosheth-hagoiim': 'Ḥaroshet-haGoyim', // חֲרֹשֶׁת הַגּוֹיִם — Sisera's city
+  'Harosheth-hagoiim': 'Ḥarosheth-haGoyim', // חֲרֹשֶׁת הַגּוֹיִם — final ת = thav
 
   // Tsadi
   'Sitnah': 'Siṭnah',              // שִׂטְנָה — note: sin+ṭet; ṭ for tet
