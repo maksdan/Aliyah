@@ -26,7 +26,7 @@ export function formatAliyotLabel(aliyot: (number | string)[]): string {
 
   const names = nums.map((n) => ALIYAH_NAMES_EN[n - 1]).filter(Boolean);
   if (nums.length === 1) {
-    return `Aliyah ${nums[0]} (${names[0]})`;
+    return `Aliyah ${nums[0]}`;
   }
-  return `Aliyot ${nums.join(' & ')} (${names.join(' & ')})`;
+  return `Aliyot ${nums.join(' & ')}`;
 }

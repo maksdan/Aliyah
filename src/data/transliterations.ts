@@ -615,6 +615,66 @@ const TRANSLITERATIONS: Record<string, string> = {
   'Jaazaniah': 'Yaʾazanyahu',       // יַאֲזַנְיָהוּ — Ezekiel haftarot
 };
 
+// Academic transliterations for the 54 parasha names (and combined readings)
+// as they appear in schedule.json.  Entries omitted here mean the schedule
+// key is already correct (e.g. "Vayeshev" already ends in vet "v").
+export const PARASHA_TRANSLITERATIONS: Record<string, string> = {
+  'Bereshit':            'Bereʾshith',       // ʾ for alef, th for final thav
+  'Noach':               'Noaḥ',             // ḥ for het
+  'Lech-Lecha':          'Lekh-Lekha',       // kh for kaf-rafe
+  'Vayera':              'Vayeraʾ',          // ʾ for final alef
+  'Chayei Sara':         'Ḥayyei Sarah',     // Ḥ for het
+  'Toldot':              'Toldoth',          // th for final thav
+  'Vayetzei':            'Vayeṣeʾ',          // ṣ for tsadi, ʾ for final alef
+  'Vayishlach':          'Vayishlaḥ',        // ḥ for het
+  'Miketz':              'Miqeṣ',            // q for quf, ṣ for tsadi
+  'Vayechi':             'Vayeḥi',           // ḥ for het
+  'Shemot':              'Shemoth',          // th for final thav
+  'Vaera':               'Vaʾeraʾ',          // ʾ for both alefs
+  'Bo':                  'Boʾ',              // ʾ for final alef
+  'Beshalach':           'Beshallaḥ',        // ḥ for het
+  'Yitro':               'Yithro',           // th for thav (follows vowel)
+  'Mishpatim':           'Mishpaṭim',        // ṭ for tet
+  'Tetzaveh':            'Teṣavveh',         // ṣ for tsadi
+  'Ki Tisa':             'Ki Tissaʾ',        // ʾ for final alef
+  'Vayakhel':            'Vayaqhel',         // q for quf
+  'Pekudei':             'Pequdei',          // q for quf
+  'Vayikra':             'Vayiqraʾ',         // q for quf, ʾ for final alef
+  'Tzav':                'Ṣav',              // ṣ for tsadi
+  'Tazria':              'Tazriaʿ',          // ʿ for final ayin
+  'Metzora':             'Meṣoraʿ',          // ṣ for tsadi, ʿ for final ayin
+  'Achrei Mot':          'ʾAḥarei Moth',     // ʾ for alef, ḥ for het, th for thav
+  'Kedoshim':            'Qedoshim',         // q for quf
+  'Emor':                'ʾEmor',            // ʾ for initial alef
+  'Bechukotai':          'Beḥuqqotai',       // ḥ for het, q for quf
+  'Nasso':               'Nassoʾ',           // ʾ for final alef
+  "Beha'alotcha":        'Behaʿalothekha',   // ʿ for ayin, th for thav, kh for kaf-rafe
+  "Sh'lach":             'Shelaḥ',           // ḥ for het
+  'Korach':              'Qoraḥ',            // q for quf, ḥ for het
+  'Chukat':              'Ḥuqqath',          // Ḥ for het, q for quf, th for thav
+  'Balak':               'Balaq',            // q for quf
+  'Pinchas':             'Pinḥas',           // ḥ for het
+  'Matot':               'Maṭoth',           // ṭ for tet, th for final thav
+  'Masei':               'Masseʿei',         // ʿ for ayin
+  'Vaetchanan':          'Vaʾetḥannan',      // ʾ for alef, ḥ for het
+  'Eikev':               'ʿEiqev',           // ʿ for initial ayin, q for quf
+  "Re'eh":               'Reʾeh',            // ʾ for alef
+  'Shoftim':             'Shofṭim',          // ṭ for tet
+  'Ki Teitzei':          'Ki Teṣeʾ',         // ṣ for tsadi, ʾ for final alef
+  'Ki Tavo':             'Ki Tavoʾ',         // ʾ for final alef
+  'Nitzavim':            'Niṣṣavim',         // ṣ for tsadi
+  'Vayeilech':           'Vayelekh',         // kh for kaf-rafe
+  "Ha'azinu":            'Haʾazinu',         // ʾ for alef
+  // Combined parashiot
+  'Vayakhel-Pekudei':       'Vayaqhel-Pequdei',
+  'Tazria-Metzora':         'Tazriaʿ-Meṣoraʿ',
+  'Achrei Mot-Kedoshim':    'ʾAḥarei Moth-Qedoshim',
+  'Behar-Bechukotai':       'Behar-Beḥuqqotai',
+  'Chukat-Balak':           'Ḥuqqath-Balaq',
+  'Matot-Masei':            'Maṭoth-Masseʿei',
+  'Nitzavim-Vayeilech':     'Niṣṣavim-Vayelekh',
+};
+
 // Remove no-op entries (where value equals key)
 const entries = Object.entries(TRANSLITERATIONS).filter(([k, v]) => k !== v);
 
