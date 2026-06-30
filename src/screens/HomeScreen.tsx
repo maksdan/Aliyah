@@ -16,7 +16,7 @@ import { DayReading, Verse, fetchTargumVerses, fetchTodayReading } from '../serv
 import { Rite, SEPHARDI_HAFTARAH } from '../data/schedule';
 import { GLOSSARY } from '../data/glossary';
 import { formatAliyotLabel } from '../utils/aliyah';
-import { cancelReminders, scheduleReminders } from '../services/notifications';
+import { cancelReminders, requestPermissionAndSchedule, scheduleReminders } from '../services/notifications';
 import { getLastSeenStreak, isDateRead, markDateRead, markStreakBannerSeen, unmarkDateRead } from '../utils/storage';
 import { refreshWeeklyStreak } from '../utils/tracker';
 
@@ -104,6 +104,10 @@ export default function HomeScreen() {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    requestPermissionAndSchedule();
+  }, []);
 
   useEffect(() => () => {
     if (copiedTimer.current) clearTimeout(copiedTimer.current);
