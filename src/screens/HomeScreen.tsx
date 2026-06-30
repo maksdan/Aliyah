@@ -453,7 +453,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     width: '100%',
-    marginBottom: 0,
+    marginBottom: 2,
   },
   navArrow: {
     fontSize: 30,
@@ -478,7 +478,6 @@ const styles = StyleSheet.create({
     fontSize: 28,
     color: '#FDF6E3',
     fontFamily: 'NotoSerifHebrew_700Bold',
-    marginTop: -4,
     marginBottom: 0,
   },
   parashaEn: {
