@@ -478,7 +478,8 @@ const styles = StyleSheet.create({
     fontSize: 28,
     color: '#FDF6E3',
     fontFamily: 'NotoSerifHebrew_700Bold',
-    marginBottom: 2,
+    marginTop: -4,
+    marginBottom: 0,
   },
   parashaEn: {
     fontSize: 18,
