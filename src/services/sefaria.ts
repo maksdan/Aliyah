@@ -1,3 +1,4 @@
+import { HDate, Sedra } from '@hebcal/core';
 import { transliterateNouns } from '../data/transliterations';
 import {
   Rite,
@@ -26,16 +27,6 @@ export interface DayReading {
   heRef: string;
   book: string;
   verses: Verse[];
-}
-
-interface CalendarItem {
-  title: { en: string; he: string };
-  displayValue: { en: string; he: string };
-  extraDetails?: { aliyot?: string[] };
-}
-
-interface CalendarResponse {
-  calendar_items: CalendarItem[];
 }
 
 interface TextResponse {
@@ -171,24 +162,73 @@ async function fetchRef(ref: string): Promise<RefText> {
   };
 }
 
-async function fetchCurrentParasha(date?: Date): Promise<{ en: string; he: string }> {
-  let url = `${BASE}/calendars?diaspora=1`;
-  if (date) {
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const d = String(date.getDate()).padStart(2, '0');
-    url += `&date=${y}-${m}-${d}`;
-  }
-  const calRes = await fetch(url);
-  if (!calRes.ok) throw new Error('Could not load calendar from Sefaria');
-  const cal: CalendarResponse = await calRes.json();
+const PARASHA_HEBREW_NAMES: Record<string, string> = {
+  'Bereshit': 'בְּרֵאשִׁית',
+  'Noach': 'נֹחַ',
+  'Lech-Lecha': 'לֶךְ-לְךָ',
+  'Vayera': 'וַיֵּרָא',
+  'Chayei Sara': 'חַיֵּי שָׂרָה',
+  'Toldot': 'תּוֹלְדוֹת',
+  'Vayetzei': 'וַיֵּצֵא',
+  'Vayishlach': 'וַיִּשְׁלַח',
+  'Vayeshev': 'וַיֵּשֶׁב',
+  'Miketz': 'מִקֵּץ',
+  'Vayigash': 'וַיִּגַּשׁ',
+  'Vayechi': 'וַיְחִי',
+  'Shemot': 'שְׁמוֹת',
+  'Vaera': 'וָאֵרָא',
+  'Bo': 'בֹּא',
+  'Beshalach': 'בְּשַׁלַּח',
+  'Yitro': 'יִתְרוֹ',
+  'Mishpatim': 'מִשְׁפָּטִים',
+  'Terumah': 'תְּרוּמָה',
+  'Tetzaveh': 'תְּצַוֶּה',
+  'Ki Tisa': 'כִּי תִשָּׂא',
+  'Vayakhel': 'וַיַּקְהֵל',
+  'Pekudei': 'פְקוּדֵי',
+  'Vayikra': 'וַיִּקְרָא',
+  'Tzav': 'צַו',
+  'Shmini': 'שְּׁמִינִי',
+  'Tazria': 'תַזְרִיעַ',
+  'Metzora': 'מְצֹרָע',
+  'Achrei Mot': 'אַחֲרֵי מוֹת',
+  'Kedoshim': 'קְדֹשִׁים',
+  'Emor': 'אֱמוֹר',
+  'Behar': 'בְּהַר',
+  'Bechukotai': 'בְּחֻקֹּתַי',
+  'Bamidbar': 'בְּמִדְבַּר',
+  'Nasso': 'נָשֹׂא',
+  "Beha'alotcha": 'בְּהַעֲלֹתְךָ',
+  "Sh'lach": 'שְׁלַח-לְךָ',
+  'Korach': 'קֹרַח',
+  'Chukat': 'חֻקַּת',
+  'Balak': 'בָּלָק',
+  'Pinchas': 'פִּינְחָס',
+  'Matot': 'מַטּוֹת',
+  'Masei': 'מַסְּעֵי',
+  'Devarim': 'דְּבָרִים',
+  'Vaetchanan': 'וָאֶתְחַנַּן',
+  'Eikev': 'עֵקֶב',
+  "Re'eh": 'רְאֵה',
+  'Shoftim': 'שֹׁפְטִים',
+  'Ki Teitzei': 'כִּי תֵצֵא',
+  'Ki Tavo': 'כִּי תָבֹוא',
+  'Nitzavim': 'נִצָּבִים',
+  'Vayeilech': 'וַיֵּלֶךְ',
+  "Ha'azinu": 'הַאֲזִינוּ',
+  'Vzot Haberakhah': 'וְזֹאת הַבְּרָכָה',
+};
 
-  const parasha = cal.calendar_items.find(
-    (item) => item.title.en === 'Parashat Hashavua'
-  );
-  if (!parasha) throw new Error('Weekly parasha not found in calendar');
-
-  return { en: parasha.displayValue.en, he: parasha.displayValue.he };
+// Derives the weekly parasha from the local Hebrew calendar (no network call).
+// Combined parashiot (e.g. Matot+Masei) are joined with "-" to match schedule.json keys.
+function getParashaFromDate(date: Date): { en: string; he: string } {
+  const hd = new HDate(date);
+  const sedra = new Sedra(hd.getFullYear(), false); // false = diaspora
+  const result = sedra.lookup(hd);
+  const parts: string[] = result.parsha;
+  const en = parts.join('-');
+  const he = parts.map((p) => PARASHA_HEBREW_NAMES[p] ?? p).join('-');
+  return { en, he };
 }
 
 // Fetch Targum Onkelos for a Torah ref. Returns null for haftarah (multi-part
@@ -210,7 +250,7 @@ export async function fetchTodayReading(rite: Rite, date: Date = new Date()): Pr
   const weekday = date.getDay();
   if (weekday === 6) return null; // Shabbat — no reading
 
-  const parasha = await fetchCurrentParasha(date);
+  const parasha = getParashaFromDate(date);
   const schedule = getParashaSchedule(parasha.en);
   if (!schedule) throw new Error(`No schedule found for "${parasha.en}"`);
 

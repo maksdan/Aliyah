@@ -19,7 +19,9 @@ interface Token {
 function tokenize(text: string, allowedKeys?: Set<string>): Token[] {
   const parts = text.split(/(\s+)/);
   const seenInVerse = new Set<string>();
-  return parts.map((part) => {
+  const result: Token[] = [];
+
+  for (const part of parts) {
     const cleaned = part.replace(/^[^a-zA-Z]+|[^a-zA-Z]+$/g, '').toLowerCase();
     if (
       cleaned &&
@@ -28,10 +30,22 @@ function tokenize(text: string, allowedKeys?: Set<string>): Token[] {
       (!allowedKeys || allowedKeys.has(cleaned))
     ) {
       seenInVerse.add(cleaned);
-      return { text: part, glossaryKey: cleaned };
+      // Strip leading/trailing punctuation from the highlighted span.
+      // Mid-word hyphens (e.g. "first-born") are preserved as part of the word.
+      const prefixLen = part.match(/^[^a-zA-Z]*/)?.[0].length ?? 0;
+      const suffixLen = part.match(/[^a-zA-Z]*$/)?.[0].length ?? 0;
+      const prefix = part.slice(0, prefixLen);
+      const word = part.slice(prefixLen, part.length - suffixLen || undefined);
+      const suffix = suffixLen ? part.slice(part.length - suffixLen) : '';
+      if (prefix) result.push({ text: prefix });
+      result.push({ text: word, glossaryKey: cleaned });
+      if (suffix) result.push({ text: suffix });
+    } else {
+      result.push({ text: part });
     }
-    return { text: part };
-  });
+  }
+
+  return result;
 }
 
 export default function AnnotatedText({ text, style, allowedKeys, onWordPress }: AnnotatedTextProps) {

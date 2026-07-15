@@ -17,7 +17,7 @@ import { Rite, SEPHARDI_HAFTARAH } from '../data/schedule';
 import { GLOSSARY } from '../data/glossary';
 import { formatAliyotLabel } from '../utils/aliyah';
 import { cancelReminders, requestPermissionAndSchedule, scheduleReminders } from '../services/notifications';
-import { PARASHA_TRANSLITERATIONS } from '../data/transliterations';
+import { CUSTOM_TRANSLITERATION_ENABLED, PARASHA_TRANSLITERATIONS } from '../data/transliterations';
 import { getLastSeenStreak, isDateRead, markDateRead, markStreakBannerSeen, unmarkDateRead } from '../utils/storage';
 import { refreshWeeklyStreak } from '../utils/tracker';
 
@@ -259,7 +259,7 @@ export default function HomeScreen() {
       <View style={styles.header}>
         {navRow}
         <Text style={styles.parashaHe}>{reading.parashaHe}</Text>
-        <Text style={styles.parashaEn}>Parshat {PARASHA_TRANSLITERATIONS[reading.parashaEn] ?? reading.parashaEn}</Text>
+        <Text style={styles.parashaEn}>Parshat {CUSTOM_TRANSLITERATION_ENABLED ? (PARASHA_TRANSLITERATIONS[reading.parashaEn] ?? reading.parashaEn) : reading.parashaEn}</Text>
         <Text style={styles.aliyahLabel}>
           {sectionLabel}
         </Text>

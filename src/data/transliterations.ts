@@ -1,3 +1,9 @@
+// Master switch for the custom academic transliteration feature. When false,
+// the original text (JPS proper nouns and the standard parasha names) is shown
+// unchanged. The mapping tables and logic below are intentionally preserved so
+// the feature can be turned back on by flipping this flag.
+export const CUSTOM_TRANSLITERATION_ENABLED = false;
+
 // Maps JPS English proper nouns → academic Hebrew transliteration.
 // Conventions applied throughout:
 //   ḥ = ח  (anywhere in word)
@@ -111,7 +117,7 @@ const TRANSLITERATIONS: Record<string, string> = {
   'Zelophehad': 'Ṣelofḥad',
   'Mahlah': 'Maḥlah',
   'Hoglah': 'Ḥoglah',
-  'Milcah': 'Milqah',
+  'Milcah': 'Milkah',                  // מִלְכָּה — כּ (kaf with dagesh = k), NOT ק
   'Tirzah': 'Tirṣah',
   'Nahshon': 'Naḥshon',
   'Kohath': 'Qehath',
@@ -137,6 +143,9 @@ const TRANSLITERATIONS: Record<string, string> = {
   'Abihu': 'Avihu',
   'Nadab': 'Nadav',                  // נָדָב — final ב after vowel = vet
   'Zur': 'Ṣur',
+  'Evi': 'ʾEvi',                     // אֱוִי — Midianite king (Num 31:8); ʾ for alef, v for vet
+  'Rekem': 'Reqem',                  // רֶקֶם — q for quf
+  'Reba': 'Revaʿ',                   // רֶבַע — v for vet after vowel, ʿ for ayin
   'Midian': 'Midyan',
 
   // ===== Numbers 26 clan names =====
@@ -187,8 +196,8 @@ const TRANSLITERATIONS: Record<string, string> = {
   'Hepher': 'Ḥefer',
   'Hepherites': 'Ḥeferites',
   'Shemidaites': 'Shemidaites',
-  'Malchiel': 'Malqiʾel',
-  'Malchielites': 'Malqiʾelites',
+  'Malchiel': 'Malkiʾel',              // מַלְכִּיאֵל — כּ (kaf with dagesh = k), NOT ק
+  'Malchielites': 'Malkiʾelites',
   'Gileadites': 'Gilʿadites',
 
   // Ephraim
@@ -328,6 +337,13 @@ const TRANSLITERATIONS: Record<string, string> = {
 
   // ===================== PLACES =====================
 
+  'Nebo': 'Nevo',                      // נְבוֹ — ב after vowel = vet
+  'Sebam': 'Sevam',                    // שְׂבָם — שׂ = sin; ב after vowel = vet
+  'Sibmah': 'Sivmah',                  // שִׂבְמָה — alternate spelling same place
+  'Elealeh': 'ʾElʿaleh',              // אֶלְעָלֵה — ʾ for alef, ʿ for ayin
+  'Jogbehah': 'Yogvehah',             // יׇגְבְּהָה — J→Y; ב after vowel = vet
+  'Beth-nimrah': 'Beth-Nimrah',        // בֵּית נִמְרָה — capitalize second element
+  'Beth-haran': 'Beth-Haran',          // בֵּית הָרָן — ה (hey), NOT ח; plain h
   'Heshbon': 'Ḥeshbon',
   'Kadesh': 'Qadesh',
   'Hebron': 'Ḥevron',
@@ -477,7 +493,7 @@ const TRANSLITERATIONS: Record<string, string> = {
   'Alvan': 'ʿAlvan',                 // עַלְוָן
   'Amasa': 'ʿAmasa',                 // עֲמָשָׂא
   'Ammiel': 'ʿAmmiʾel',              // עַמִּיאֵל
-  'Ammihud': 'ʿAmmiḥud',             // עַמִּיהוּד — also ḥet
+  'Ammihud': 'ʿAmmihud',             // עַמִּיהוּד — ה (hey) in הוּד, NOT ח
   'Amminadab': 'ʿAmminadav',         // עַמִּינָדָב
   'Ammishaddai': 'ʿAmishaddai',      // עַמִּישַׁדַּי
   'Amram': 'ʿAmram',                 // עַמְרָם
@@ -507,7 +523,7 @@ const TRANSLITERATIONS: Record<string, string> = {
   'Baal-shalishah': 'Baʿal-Shalishah',
   'Belial': 'Beliyaʿal',             // בְּלִיַּעַל
   'Ben-ammi': 'Ben-ʿAmmi',           // עַמִּי
-  'Beon': 'Beʿon',                   // בְּעֹן
+  'Beon': 'Veʿon',                   // בְּעֹן — ב without dagesh = vet
   'Bera': 'Beraʿ',                   // בֶּרַע — king of Sodom
   'Birsha': 'Birshaʿ',               // בֶּרֶשַׁע — king of Gomorrah
   'Chedorlaomer': 'Kedorlaʿomer',    // כְּדׇרְלָעֹמֶר
@@ -613,6 +629,196 @@ const TRANSLITERATIONS: Record<string, string> = {
 
   // J → Y
   'Jaazaniah': 'Yaʾazanyahu',       // יַאֲזַנְיָהוּ — Ezekiel haftarot
+
+  // ===================== ADDITIONAL — BATCH 3 =====================
+
+  // Major places (high-frequency across many parashiot)
+  'Jerusalem': 'Yerushalayim',      // יְרוּשָׁלַיִם
+  'Lebanon': 'Levanon',             // לְבָנוֹן — ב after vowel = vet
+  'Hermon': 'Ḥermon',               // חֶרְמוֹן — ḥ for het
+  'Babel': 'Bavel',                  // בָּבֶל — second ב after vowel = vet
+  'Babylon': 'Bavel',                // same Hebrew word
+  'Euphrates': 'Perat',              // פְּרָת — Hebrew name
+  'Gihon': 'Giḥon',                  // גִּיחוֹן — ḥ for het (river of Eden)
+  'Machpelah': 'Makhpelah',         // מַכְפֵּלָה — kh for kaf-rafe
+  'Shephelah': 'Shefelah',           // שְׁפֵלָה — peh without dagesh = f
+  'Chinnereth': 'Kinnereth',         // כִּנֶּרֶת — kaf (not het); final ת = thav
+  'Lebo-hamath': 'Levo-Ḥamath',    // לְבוֹא חֲמָת — vet, ḥ for het
+  'Riblah': 'Rivlah',                // רִבְלָה — ב after vowel = vet
+  'Sirion': 'Siryon',                // שִׁרְיוֹן — yod before nun
+  'Rephaim': 'Refaʾim',             // רְפָאִים — peh without dagesh = f; ʾ for alef
+  'Salcah': 'Salkhah',               // סַלְכָה — kh for kaf-rafe
+  'Kedemoth': 'Qedemoth',           // קְדֵמוֹת — q for quf; final ת = thav
+  'Bezer': 'Beṣer',                  // בֶּצֶר — ṣ for tsadi
+
+  // Common religious/ceremonial terms
+  'Cherubim': 'Keruvim',            // כְּרוּבִים — kaf not het; ב after vowel = vet
+  'Thummim': 'Tummim',              // תֻּמִּים — ת with dagesh = t (not th)
+  'Abib': 'Aviv',                    // אָבִיב — ב after vowel = vet (month name)
+  'Mizraim': 'Miṣrayim',            // מִצְרַיִם — ṣ for tsadi (Hebrew for Egypt)
+  'Ephod': 'ʾEfod',                  // אֵפוֹד — ʾ for alef; peh without dagesh = f
+
+  // People — vet (ב without dagesh)
+  'Reuel': 'Reʿuʾel',               // רְעוּאֵל — ʿ for ayin, ʾ for alef
+  'Nebaioth': 'Nevayoth',           // נְבָיוֹת — ב after vowel = vet; final ת = thav
+  'Poti-phera': 'Poṭi-Feraʿ',      // פּוֹטִי פֶרַע — ṭ for tet; ph→f; ʿ for ayin
+  'Abinadab': 'Avinadav',           // אֲבִינָדָב — vet for both bet letters
+  'Michal': 'Mikhal',                // מִיכַל — kh for kaf-rafe
+  'Nacon': 'Nakhon',                 // נָכוֹן — kh for kaf-rafe
+
+  // People — J → Y
+  'Jerubbaal': 'Yerubaʿal',         // יְרֻבַּעַל — J→Y; ʿ for ayin
+  'Jemuel': 'Yemuʾel',              // יְמוּאֵל — J→Y; ʾ for alef
+  'Jether': 'Yeter',                 // יֶתֶר — J→Y; ת with dagesh = t
+  'Jotbath': 'Yoṭvath',             // יׇטְבָתָה — J→Y; ṭ for tet; ב=vet; final ת=thav
+  'Jogli': 'Yogli',                  // יׇגְלִי — J→Y
+
+  // People — het (ḥ)
+  'Hanamel': 'Ḥanamel',             // חֲנַמְאֵל — ḥ for het
+  'Hanniel': 'Ḥanniʾel',            // חַנִּיאֵל — ḥ for het; ʾ for alef
+  'Haggith': 'Ḥaggith',             // חַגִּית — ḥ for het; final ת = thav
+
+  // People — tsadi/quf/other
+  'Elizaphan': 'Eliṣafan',          // אֶלִיצָפָן — ṣ for tsadi; peh without dagesh = f
+  'Elzaphan': 'Elṣafan',            // אֶלְצָפָן — same
+  'Kemuel': 'Qemuʾel',              // קְמוּאֵל — q for quf; ʾ for alef
+  'Bukki': 'Buqqi',                  // בֻּקִּי — q for quf
+  'Paltiel': 'Palṭiʾel',            // פַּלְטִיאֵל — ṭ for tet; ʾ for alef
+  'Pedahel': 'Pedahʾel',            // פְּדַהְאֵל — ʾ for alef
+  'Parnach': 'Parnakh',              // פַּרְנָךְ — ך (khaf sofit) = kh, NOT ח
+  'Chislon': 'Kislon',               // כִּסְלוֹן — kaf (not het)
+  'Machi': 'Makhi',                  // מָכִי — kh for kaf-rafe
+  'Vophsi': 'Vofsi',                 // וָפְסִי — peh without dagesh = f
+  'Gaddiel': 'Gaddiʾel',            // גַּדִּיאֵל — ʾ for alef
+  'Michael': 'Mikhaʾel',            // מִיכָאֵל — kh for kaf-rafe; ʾ for alef
+  'Neriah': 'Neriyyah',             // נֵרִיָּה
+  'Remaliah': 'Remalyahu',          // רְמַלְיָהוּ
+
+  // People — peh → f
+  'Riphath': 'Rifath',              // רִיפַת — peh without dagesh = f; final ת = thav
+
+  // Haftarah people
+  'Pekah': 'Peqaḥ',                 // פֶּקַח — q for quf; ḥ for het
+  'Tabeel': 'Ṭavʾel',               // טָבְאֵל — ṭ for tet; vet; ʾ for alef
+  'Amanah': 'ʾAmanah',              // אֲמָנָה — ʾ for alef
+  'Pharpar': 'Farpar',               // פַּרְפַּר — peh without dagesh = f
+
+  // Compound place names — haftarot
+  'Obed-edom': 'ʿOved-ʾEdom',      // עֹבֵד אֱדֹם — ʿ for ayin; vet; ʾ for alef
+  'Perez-uzzah': 'Pereṣ-ʿUzzah',   // פֶּרֶץ עֻזָּה — ṣ for tsadi; ʿ for ayin
+  'Kishon': 'Qishon',                // קִישׁוֹן — q for quf
+  'Harosheth-goiim': 'Ḥarosheth-haGoyim', // variant spelling of Harosheth-hagoiim
+
+  // Genesis — Table of Nations (Noach)
+  'Arpachshad': 'Arpakhshad',       // אַרְפַּכְשַׁד — kh for kaf-rafe
+  'Abimael': 'Avimaʾel',            // אֲבִימָאֵל — vet; ʾ for alef
+  'Hazarmaveth': 'Ḥaṣarmaveth',    // חֲצַרְמָוֶת — ḥ for het; ṣ for tsadi
+  'Naphtuhim': 'Naftuḥim',          // נַפְתֻּחִים — peh without dagesh = f; ח = het → ḥ
+  'Casluhim': 'Kasluḥim',           // כַּסְלֻחִים — kaf; ḥ for het
+  'Elishah': 'ʾElishah',            // אֱלִישָׁה — ʾ for alef
+
+  // Numbers 33 — wilderness stations
+  'Pi-hahiroth': 'Pi-haḤiroth',     // פִּי הַחִירֹת — ḥ for het; final ת = thav
+  'Pene-hahiroth': 'Pene-haḤiroth', // alternate spelling
+  'Libnah': 'Livnah',               // לִבְנָה — ב after vowel = vet
+  'Kehelath': 'Qehelath',           // קְהֵלָתָה — q for quf; final ת = thav
+  'Haradah': 'Ḥaradah',             // חֲרָדָה — ḥ for het
+  'Makheloth': 'Maqheloth',         // מַקְהֵלֹת — q for quf; final ת = thav
+  'Mithkah': 'Mithqah',             // מִתְקָה — final ת = thav; q for quf
+  'Hashmonah': 'Ḥashmonah',         // חַשְׁמֹנָה — ḥ for het
+  'Dophkah': 'Dofqah',              // דָּפְקָה — peh without dagesh = f; q for quf
+  'Abronah': 'ʿAvronah',            // עַבְרֹנָה — ʿ for ayin; ב after vowel = vet
+  'Dibon-gad': 'Divon-Gad',         // דִּיבֹן גָּד — ב after vowel = vet
+  'Abel-shittim': 'Abel-Shiṭṭim',   // אָבֵל הַשִּׁטִּים — ṭ for tet
+  'Beth-jeshimoth': 'Beth-Yeshimoth', // בֵּית הַיְשִׁימוֹת — J→Y in Jeshimoth
+  'Nobah': 'Novaḥ',                 // נֹבַח — ב after vowel = vet; ḥ for het
+  'Nophah': 'Nofah',                // נֹפַח — peh without dagesh = f
+  // Numbers 34 — land boundaries
+  'Kenath': 'Qenath',               // קְנָת — q for quf; final ת = thav
+  'Kiriathaim': 'Qiryathaim',       // קִרְיָתַיִם — q for quf; th from ת
+  'Kenizzite': 'Qenizzite',          // קְנִזִּי — q for quf
+  'Kenizzites': 'Qenizzites',
+  'Ezion-geber': 'ʿEṣyon-Gever',   // עֶצְיוֹן גֶּבֶר — ʿ for ayin; ṣ for tsadi; ב after vowel = vet
+
+  // ===================== COMPOUND PLACE NAMES — BATCH 4 =====================
+  // Systematic coverage of hyphenated compounds that appear across Torah + haftarot.
+
+  // Hazar- (חֲצַר = Ḥaṣar — enclosed settlement; ḥ for het, ṣ for tsadi)
+  'Hazar-enan': 'Ḥaṣar-ʿEnan',          // חֲצַר עֵינָן — Num 34:9-10; ʿ for ayin
+  'Hazar-addar': 'Ḥaṣar-ʿAddar',        // חֲצַר אַדָּר — Num 34:4; ʿ for ayin
+  'Hazar-gaddah': 'Ḥaṣar-Gaddah',       // חֲצַר גַּדָּה — Josh 15:27
+  'Hazar-shual': 'Ḥaṣar-Shual',         // חֲצַר שׁוּעָל — Josh 15:28
+
+  // Havvoth- (חַוֹּת = Ḥavvoth — tent-villages; ḥ for het)
+  'Havvoth-jair': 'Ḥavvoth-Yaʾir',      // חַוֹּת יָאִיר — Num 32:41; Deut 3:14; J→Y, ʾ for alef
+
+  // En- (עֵין = ʿEn — spring; ʿ for ayin throughout)
+  'En-mishpat': 'ʿEn-Mishpaṭ',          // עֵין מִשְׁפָּט — Gen 14:7; ṭ for tet
+  'En-rogel': 'ʿEn-Rogel',              // עֵין רֹגֵל — Josh 15:7; 2 Sam 17:17
+  'En-gedi': 'ʿEn-Gedi',                // עֵין גֶּדִי — 1 Sam 24:2; Song of Songs
+  'En-dor': 'ʿEn-Dor',                  // עֵין דֹּאר — Josh 17:11; 1 Sam 28:7
+  'En-harod': 'ʿEn-Ḥarod',              // עֵין חֲרֹד — Judg 7:1; ḥ for het
+  'En-rimmon': 'ʿEn-Rimmon',            // עֵין רִמּוֹן — Neh 11:29
+  'En-tappuah': 'ʿEn-Tappuaḥ',         // עֵין תַּפּוּחַ — Josh 16:8; ḥ for final het
+  'En-shemesh': 'ʿEn-Shemesh',          // עֵין שֶׁמֶשׁ — Josh 15:7
+  'En-gannim': 'ʿEn-Gannim',            // עֵין גַּנִּים — Josh 19:21
+
+  // Kiriath- additional (קִרְיַת = Qiryath; q for quf)
+  'Kiriath-jearim': 'Qiryath-Yeʿarim',  // קִרְיַת יְעָרִים — J→Y; ʿ for ayin
+  'Kiriath-sepher': 'Qiryath-Sefer',    // קִרְיַת סֵפֶר — peh without dagesh = f
+  'Kiriath-baal': 'Qiryath-Baʿal',      // קִרְיַת בַּעַל — ʿ for ayin in Baʿal
+
+  // Ramoth- (רָמֹת = Ramoth — heights)
+  'Ramoth-gilead': 'Ramoth-Gilʿad',     // רָמֹת גִּלְעָד — ʿ for ayin in Gilʿad
+
+  // Kir- (קִיר = Qir — wall; q for quf)
+  'Kir-hareseth': 'Qir-Ḥareseth',       // קִיר חֲרֶשֶׂת — q for quf; ḥ for het
+  'Kir-heres': 'Qir-Ḥeres',             // קִיר חֶרֶשׂ — variant spelling
+  'Kir-moab': 'Qir-Moʾav',              // קִיר מוֹאָב — Isa 15:1; ʾ for alef in Moʾav
+
+  // Gath- (גַּת = Gath — winepress)
+  'Gath-hepher': 'Gath-Ḥefer',          // גַּת הַחֵפֶר — ḥ for het; peh without dagesh = f
+  'Gath-rimmon': 'Gath-Rimmon',         // גַּת רִמּוֹן — Josh 19:45
+
+  // Beth- additional (בֵּית = Beth — house of)
+  'Beth-horon': 'Beth-Ḥoron',           // בֵּית חוֹרוֹן — ḥ for het
+  'Beth-rehob': 'Beth-Reḥov',           // בֵּית רְחֹב — ḥ for het; ב after vowel = vet
+  'Beth-tappuah': 'Beth-Tappuaḥ',       // בֵּית תַּפּוּחַ — ḥ for final het
+  'Beth-shittah': 'Beth-Shiṭṭah',       // בֵּית הַשִּׁטָּה — ṭ for tet
+  'Beth-anath': 'Beth-ʿAnath',          // בֵּית עֲנָת — ʿ for ayin
+  'Beth-aven': 'Beth-ʾAven',            // בֵּית אָוֶן — ʾ for alef
+  'Beth-arabah': 'Beth-ʿAravah',        // בֵּית הָעֲרָבָה — ʿ for ayin; ב = vet
+  'Beth-zur': 'Beth-Ṣur',               // בֵּית צוּר — ṣ for tsadi
+  'Beth-shemesh': 'Beth-Shemesh',       // בֵּית שֶׁמֶשׁ — capitalize second element
+  'Beth-shean': 'Beth-Shean',           // בֵּית שְׁאָן — capitalize second element
+
+  // Baal- additional (בַּעַל = Baʿal; ʿ for ayin throughout)
+  'Baal-hazor': 'Baʿal-Ḥaṣor',         // בַּעַל חָצוֹר — ḥ for het; ṣ for tsadi
+  'Baal-hermon': 'Baʿal-Ḥermon',        // בַּעַל חֶרְמוֹן — ḥ for het
+  'Baal-gad': 'Baʿal-Gad',              // בַּעַל גָּד — ʿ for ayin
+  'Baal-tamar': 'Baʿal-Tamar',          // בַּעַל תָּמָר — ʿ for ayin
+
+  // Abel- additional (אָבֵל = Abel — meadow)
+  'Abel-beth-maacah': 'Abel-Beth-Maʿakhah', // אָבֵל בֵּית מַעֲכָה — ʿ for ayin; kh for khaf-rafe
+  'Abel-mizraim': 'Abel-Miṣrayim',      // אָבֵל מִצְרַיִם — ṣ for tsadi (Gen 50:11)
+
+  // Hazzon-/Hazazon-tamar (חַצְצוֹן תָּמָר — Gen 14:7; ḥ for het; ṣ for tsadi)
+  'Hazzon-tamar': 'Ḥaṣaṣon-Tamar',
+  'Hazazon-tamar': 'Ḥaṣaṣon-Tamar',
+
+  // Maacah (מַעֲכָה = Maʿakhah — ʿ for ayin; kh for khaf-rafe)
+  'Maacah': 'Maʿakhah',
+  'Maacathite': 'Maʿakhathite',
+  'Maacathites': 'Maʿakhathites',
+
+  // Allon-bacuth (Gen 35:8 — ʾ for alef; kh for khaf-rafe)
+  'Allon-bacuth': 'ʾAllon-Bakhuth',     // אַלּוֹן בָּכוּת — final ת = thav
+
+  // Argob (אַרְגֹּב — Deut 3:4,13,14 — ʾ for alef; ב after vowel = vet)
+  'Argob': 'ʾArgov',
+
+  // Salecah (alternate JPS spelling of Salcah — סַלְכָה — kh for khaf-rafe)
+  'Salecah': 'Salekhah',
 };
 
 // Academic transliterations for the 54 parasha names (and combined readings)
@@ -690,5 +896,6 @@ const pattern = new RegExp(
 const map = Object.fromEntries(entries);
 
 export function transliterateNouns(text: string): string {
+  if (!CUSTOM_TRANSLITERATION_ENABLED) return text;
   return text.replace(pattern, (match) => map[match] ?? match);
 }
