@@ -15,6 +15,7 @@ import SelectableText, { glossaryKeysIn } from '../components/SelectableText';
 import { DayReading, Verse, fetchTargumVerses, fetchTodayReading } from '../services/sefaria';
 import { Rite, SEPHARDI_HAFTARAH } from '../data/schedule';
 import { formatAliyotLabel } from '../utils/aliyah';
+import { splitAtEtnachta } from '../utils/phrasing';
 import { cancelReminders, requestPermissionAndSchedule, scheduleReminders } from '../services/notifications';
 import { CUSTOM_TRANSLITERATION_ENABLED, PARASHA_TRANSLITERATIONS } from '../data/transliterations';
 import {
@@ -43,6 +44,39 @@ const RITES: { key: Rite; label: string }[] = [
   { key: 'ashkenazi', label: 'Ashkenazi' },
   { key: 'sephardi', label: 'Sephardi' },
 ];
+
+// The half of the pasuq after the etnachta. A lift of DARK rather than a new
+// hue: it should read as the same voice reaching its second phrase, not as
+// different material. Widening the space at the pause was the other candidate
+// and was rejected — a gap mid-verse reads as a setumah, and implying a break
+// the scroll does not have is worse than no cue at all.
+const PASUQ_AFTER_PAUSE = '#6E5233';
+
+// Targum Onkelos. A cool slate, deliberately outside the brown ramp the Hebrew
+// lives in: in the Aramaic tab it sits directly under the pasuq, and when it was
+// another shade of brown it read as a continuation of the verse above rather
+// than as a second voice.
+const TARGUM_COLOR = '#46617A';
+
+// A pasuq, cued at its own principal pause. The half after the etnachta is set
+// a shade lighter, so the verse reads as the two phrases it actually is rather
+// than as one undifferentiated run — the division is the text's own, carried by
+// the ta'amim, not one we invented. Verses with no etnachta render whole.
+function HebrewVerse({ text }: { text: string }) {
+  const halves = useMemo(() => splitAtEtnachta(text), [text]);
+  return (
+    <Text style={styles.hebrewText}>
+      {halves ? (
+        <>
+          {halves[0]}
+          <Text style={styles.pasuqAfterPause}>{` ${halves[1]}`}</Text>
+        </>
+      ) : (
+        text
+      )}
+    </Text>
+  );
+}
 
 function buildShareText(book: string, verse: Verse, mode: DisplayMode, targumVerse?: Verse): string {
   const source = `${book} ${verse.ref}`.trim();
@@ -569,7 +603,7 @@ export default function HomeScreen() {
                 <Text style={styles.verseNumber}>{i + 1}</Text>
                 <Text style={styles.verseRef}>{verse.ref}</Text>
               </View>
-              <SelectableText text={verse.he} style={styles.hebrewText} />
+              <HebrewVerse text={verse.he} />
               {effectiveMode === 'bilingual' && (
                 <SelectableText
                   text={verse.en}
@@ -871,6 +905,9 @@ const styles = StyleSheet.create({
     writingDirection: 'rtl',
     marginBottom: 6,
   },
+  pasuqAfterPause: {
+    color: PASUQ_AFTER_PAUSE,
+  },
   englishText: {
     fontSize: 15,
     lineHeight: 24,
@@ -881,15 +918,24 @@ const styles = StyleSheet.create({
   },
   targumText: {
     fontFamily: 'TaameyFrank_Regular',
-    // Same ratio as the Hebrew above; ink spans 26.9px at this size, so 29 is
-    // the same ~2px from its own floor.
-    fontSize: 22,
-    lineHeight: 29,
-    color: '#5C3D1E',
+    // Set at the Hebrew's size, and given the Hebrew's line height with it —
+    // raising the size without the leading would have put the niqud into the row
+    // above. It reads with more air than the Hebrew does at the same 34, because
+    // Onkelos is pointed but carries no ta'amim: nothing stacks below the
+    // vowels, so the ink spans well under the Hebrew's 1.221em.
+    fontSize: 26,
+    lineHeight: 34,
+    // Set off from the Hebrew above it. The pasuq's last line has ta'amim
+    // hanging below its line box, so the 6px the Hebrew already carries is not
+    // the gap it looks like — this adds 8 for a clear start of its own.
+    marginTop: 8,
+    // The old 0.85 opacity is gone with the sepia: fading a colour toward the
+    // parchment shifts its hue as well as its weight. This one carries its
+    // final value.
+    color: TARGUM_COLOR,
     textAlign: 'right',
     writingDirection: 'rtl',
     marginBottom: 6,
-    opacity: 0.85,
   },
   targumNote: {
     fontSize: 14,
