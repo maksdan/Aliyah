@@ -20,28 +20,29 @@
 // A handful of archaic entries below survive from the older JPS 1917 text and
 // no longer appear; they are harmless and cost nothing, and would come back
 // into play if the translation source ever changes.
+//
+// Each concept is defined exactly once. Inflections — cubit/cubits,
+// socket/sockets, beget/begat/begot — are listed in FORMS and resolve to their
+// lemma's definition instead of repeating it. They have to stay matchable:
+// "cubits" outnumbers "cubit" almost three to one, and "sockets" ten to one, so
+// dropping a plural would quietly stop most of those verses highlighting.
 
-export const GLOSSARY: Record<string, string> = {
+const DEFINITIONS: Record<string, string> = {
   // ===================== ARCHAIC / LESS COMMON ENGLISH =====================
   bards: 'Poets or storytellers who compose verse',
   wroth: 'Very angry; furious',
-  smote: 'Struck forcefully (past tense of "smite")',
   raiment: 'Clothing; garments',
   kine: 'Cattle; cows',
   hither: 'To this place; here',
   thither: 'To that place; there',
   nigh: 'Near; close',
-  begat: 'Was the father of; fathered',
-  begot: 'Was the father of; fathered',
   betrothed: 'Engaged to be married',
   kindred: 'Relatives; family',
   concubine: 'A secondary wife or companion in ancient times',
   maw: 'The stomach of an animal',
   mantle: 'A cloak or loose outer garment',
-  bough: 'A main branch of a tree',
   boughs: 'The main branches of a tree',
   fowl: 'Birds, especially those hunted or raised for food',
-  fowls: 'Birds, especially those hunted or raised for food',
   brethren: 'Brothers; kinsmen (archaic plural of "brother")',
   damsel: 'A young unmarried woman',
   handmaid: 'A female servant or attendant',
@@ -53,16 +54,13 @@ export const GLOSSARY: Record<string, string> = {
   peradventure: 'Perhaps; it may be that',
   fain: 'Gladly; willingly',
   yonder: 'Over there; at a distance',
-  girded: 'Fastened or belted on (as a garment or sword)',
-  gird: 'To fasten or belt on; to prepare oneself',
+  gird: 'To fasten or belt on, as a garment or sword; to prepare oneself',
   hearken: 'To listen attentively; to heed',
-  beget: 'To father (a child)',
+  beget: 'To father a child — "begat" and "begot" are its past forms',
   countenance: 'A person’s face or facial expression',
   visage: 'The face or appearance',
   sheaf: 'A bundle of cut grain stalks bound together',
-  sheaves: 'Bundles of cut grain stalks bound together',
   threshing: 'Separating grain from its husks by beating',
-  threshed: 'Had grain beaten from its stalks',
   winnowing: 'Separating grain from chaff using wind or air',
   chaff: 'The papery husks blown away when grain is winnowed — a stock image for something worthless and easily scattered',
   tares: 'Weeds that grow among wheat',
@@ -70,9 +68,7 @@ export const GLOSSARY: Record<string, string> = {
   gleanings: 'Leftover crops in a field, left for the poor to gather',
   ravening: 'Ravenously hungry; predatory',
   sojourn: 'To live somewhere temporarily; a temporary stay',
-  sojourner: 'A temporary resident; a stranger in a foreign land',
   harlot: 'A prostitute',
-  harlotry: 'Prostitution; metaphorically, idolatry',
   usury: 'Interest on a loan (prohibited in Torah toward fellow Israelites)',
   firmament: 'The sky or heavens, conceived as a solid dome',
   progeny: 'Offspring; descendants',
@@ -94,8 +90,7 @@ export const GLOSSARY: Record<string, string> = {
   scion: 'A descendant; an offshoot',
   dominion: 'Authority to rule; sovereign control',
   recompense: 'Compensation or reward for effort or loss',
-  soothsayer: 'Qosem — one who claims to predict the future',
-  soothsaying: 'Qesem — fortune telling; predicting the future',
+  soothsayer: 'Qosem — one who claims to foretell the future; the practice itself is qesem',
   divination: 'Seeking knowledge of the future through supernatural means',
   augury: 'Naḥash — divination by interpreting signs and omens',
   phylacteries: 'Tefillin — leather boxes with Torah passages, worn during prayer',
@@ -107,7 +102,6 @@ export const GLOSSARY: Record<string, string> = {
   burnished: 'Polished to a bright, gleaming finish',
   repast: 'A meal',
   smite: 'To strike hard; to defeat or destroy',
-  smiting: 'Striking hard; dealing a blow',
   staves: 'Wooden poles or rods; a staff or stick',
   imprecation: 'Qelalah — a spoken curse',
   lustration: 'Ṭaharah — a purification ceremony',
@@ -115,9 +109,7 @@ export const GLOSSARY: Record<string, string> = {
 
   // ===================== UNITS OF MEASURE =====================
   cubit: 'Ammah — ancient unit of length, about 18 inches (45 cm): elbow to fingertip',
-  cubits: 'Ammot — ancient units of length, each about 18 inches (45 cm)',
-  shekel: 'Sheqel — ancient unit of weight/currency, about 11g of silver',
-  shekels: 'Sheqalim — ancient units of weight/currency',
+  shekel: 'Sheqel — ancient unit of weight and currency, about 11g of silver',
   talent: 'Kikkar — the largest biblical weight, about 3,000 shekels (roughly 30 kg / 75 lb)',
   gerahs: 'The smallest biblical weight — one twentieth of a shekel, about half a gram',
   hin: 'Hin — unit of liquid measure, about 6 liters',
@@ -144,7 +136,6 @@ export const GLOSSARY: Record<string, string> = {
   stacte: 'Naṭaf — a fragrant resin that drips from a balsam tree, one of the four ingredients of the sacred incense',
   tamarisk: 'Eshel — a wispy salt-tolerant desert tree that survives on brackish water. Abraham plants one at Beer-Sheba',
   terebinth: 'Elah — a broad, long-lived pistachio relative that stands out on open hillsides; individual trees marked sacred sites and graves',
-  terebinths: 'Elonim — broad, long-lived trees that stood as landmarks at sacred sites',
   wormwood: 'Laʿanah — a shrubby desert plant with intensely bitter leaves; the standard metaphor for bitterness',
 
   // ===================== ANIMALS =====================
@@ -162,10 +153,8 @@ export const GLOSSARY: Record<string, string> = {
   holies: 'The Holy of Holies — the innermost chamber housing the Ark, entered by the High Priest alone, once a year',
   enclosure: 'The Tabernacle’s outer courtyard, fenced by linen hangings on posts, where the altar stood',
   hangings: 'The linen screens hung between the courtyard posts to wall off the sacred enclosure',
-  planks: 'Qerashim — the upright acacia frames, overlaid in gold, that formed the Tabernacle’s walls',
-  plank: 'Qeresh — an upright gold-plated acacia frame forming part of the Tabernacle wall',
-  sockets: 'Adanim — the heavy cast silver bases the wall planks and posts stood in, anchoring the structure',
-  socket: 'Eden — a cast metal base holding an upright plank or post',
+  plank: 'Qeresh — an upright acacia frame, overlaid in gold, forming part of the Tabernacle wall',
+  socket: 'Eden — a cast silver base that a wall plank or post stood in, anchoring the structure',
   tenons: 'The projecting pegs at the foot of each plank that slotted into its silver sockets',
   clasps: 'Qerasim — the gold or bronze hooks that joined the Tabernacle’s curtain sets into one cover',
   loops: 'The fabric eyelets sewn along the curtain edges, joined by the clasps',
@@ -192,7 +181,6 @@ export const GLOSSARY: Record<string, string> = {
   elevation: 'Tenufah (elevation offering) — a portion raised and presented before God, then given to the priests',
   oblation: 'Qorban — an offering or sacrifice made to God',
   libation: 'Nesekh — a liquid offering of wine or oil poured out alongside a sacrifice',
-  libations: 'Nesakhim — liquid offerings of wine or oil poured out with a sacrifice',
   expiation: 'Kapparah — the act of making atonement, wiping away guilt or impurity',
   azazel: 'The destination of the goat sent into the wilderness on the Day of Atonement — read variously as a place, a demon, or "utter removal"',
   ordination: 'Milluʾim — the seven-day rite installing Aaron and his sons as priests',
@@ -204,15 +192,13 @@ export const GLOSSARY: Record<string, string> = {
   molten: 'Massekhah — made by melting and casting metal',
 
   // ===================== GEOGRAPHY =====================
-  wadi: 'Naḥal — a dry desert streambed that carries a torrent for a few hours after rain and is bone dry the rest of the year; the usual route and boundary in this terrain',
-  wadis: 'Naḥalim — dry desert streambeds that flood briefly after rain',
+  wadi: 'Naḥal — a desert streambed that runs for a few hours after rain and is bone dry the rest of the year; the usual route, and the usual boundary, in this terrain',
   arabah: 'The deep rift valley running from the Dead Sea down to the Gulf of Aqaba — hot, arid, and far below sea level',
   negeb: 'The arid south of the Land, between the hill country and the Sinai — grazing country, too dry for reliable farming',
   shephelah: 'The belt of low chalk foothills between the coastal plain and the Judean hills — fertile, and the frontier with Philistia',
   tableland: 'The Mishor — the high flat plateau east of the Dead Sea, good pasture and the heart of Moabite territory',
   coastlands: 'Iyyim — the islands and far shores of the Mediterranean; the biblical image of the distant ends of the earth',
-  cistern: 'A pit cut into rock and sealed with plaster to store rainwater through the dry season — the difference between life and death in this climate',
-  cisterns: 'Rock-cut, plastered pits for storing rainwater through the rainless summer',
+  cistern: 'A pit cut into rock and sealed with plaster to store rainwater through the rainless summer — the difference between life and death in this climate',
   expanse: 'Raqiaʿ — the dome of sky that Genesis pictures separating the waters above from those below',
 
   // ===================== PLACES =====================
@@ -285,4 +271,35 @@ export const GLOSSARY: Record<string, string> = {
   aroer: 'A town on the rim of the Arnon gorge, marking Israel’s southeastern boundary east of the Jordan',
   dibon: 'A town on the Moabite plateau north of the Arnon',
   jazer: 'A town and district in Gilead, east of the Jordan, noted for its pastureland',
+};
+
+// Other forms of the same word. They resolve to their lemma's definition
+// rather than repeating it — one concept, written once — while still being
+// matched in the text, so a verse that says "cubits" or "sockets" is
+// highlighted just as one that says "cubit" or "socket" would be.
+const FORMS: Record<string, string> = {
+  begat: 'beget',
+  begot: 'beget',
+  cisterns: 'cistern',
+  cubits: 'cubit',
+  fowls: 'fowl',
+  girded: 'gird',
+  harlotry: 'harlot',
+  libations: 'libation',
+  planks: 'plank',
+  sheaves: 'sheaf',
+  shekels: 'shekel',
+  smiting: 'smite',
+  smote: 'smite',
+  sockets: 'socket',
+  soothsaying: 'soothsayer',
+  terebinths: 'terebinth',
+  wadis: 'wadi',
+};
+
+export const GLOSSARY: Record<string, string> = {
+  ...DEFINITIONS,
+  ...Object.fromEntries(
+    Object.entries(FORMS).map(([form, lemma]) => [form, DEFINITIONS[lemma]]),
+  ),
 };
