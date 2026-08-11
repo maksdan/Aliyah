@@ -1,9 +1,9 @@
 // Tap-for-definition glossary.
 //
-// Keys are matched against the English text after stripping leading/trailing
-// punctuation and lower-casing (see SelectableText.tokenize), so every key here
-// must be lower case. Internal hyphens are preserved, so compound place names
-// like 'beer-sheba' work; possessives ("Egypt’s") deliberately do not match.
+// Keys are matched against the English text after splitting on whitespace and
+// em dashes, stripping surrounding punctuation and any possessive, then
+// lower-casing (see glossaryKey in SelectableText), so every key here must be
+// lower case. Internal hyphens survive, so 'beer-sheba' and 'paddan-aram' work.
 //
 // Every entry below was checked to actually occur in the year's readings as
 // Sefaria currently serves them (JPS TANAKH: Gender-Sensitive Edition for the
@@ -26,6 +26,12 @@
 // lemma's definition instead of repeating it. They have to stay matchable:
 // "cubits" outnumbers "cubit" almost three to one, and "sockets" ten to one, so
 // dropping a plural would quietly stop most of those verses highlighting.
+//
+// FORMS was built by sweeping every English verse of the year for inflections
+// of each concept, so it is meant to be exhaustive. Two look like omissions and
+// are not: "shrines" is Topheth's pagan shrines, not the Tabernacle's inner
+// room, and "enclosures" is sheepfolds, not the Tabernacle courtyard. Both
+// would hand the reader the wrong definition.
 
 const DEFINITIONS: Record<string, string> = {
   // ===================== ARCHAIC / LESS COMMON ENGLISH =====================
@@ -56,12 +62,12 @@ const DEFINITIONS: Record<string, string> = {
   yonder: 'Over there; at a distance',
   gird: 'To fasten or belt on, as a garment or sword; to prepare oneself',
   hearken: 'To listen attentively; to heed',
-  beget: 'To father a child — "begat" and "begot" are its past forms',
+  beget: 'To father a child',
   countenance: 'A person’s face or facial expression',
   visage: 'The face or appearance',
   sheaf: 'A bundle of cut grain stalks bound together',
   threshing: 'Separating grain from its husks by beating',
-  winnowing: 'Separating grain from chaff using wind or air',
+  winnowing: 'Separating grain from chaff on the wind',
   chaff: 'The papery husks blown away when grain is winnowed — a stock image for something worthless and easily scattered',
   tares: 'Weeds that grow among wheat',
   vintage: 'The grape harvest; the season of gathering grapes',
@@ -77,12 +83,12 @@ const DEFINITIONS: Record<string, string> = {
   tumult: 'Loud confusion; commotion',
   plunder: 'Goods stolen during war; to steal by force',
   seer: 'A prophet; one who sees visions',
-  requital: 'Repayment or retaliation',
+  requital: 'Repaying in kind — whether reward or retaliation',
   enmity: 'Deep-seated hostility or hatred',
   iniquity: 'Immoral behavior; sin; wickedness',
   supplication: 'A humble prayer or earnest request',
   pestilence: 'A deadly epidemic disease; a plague',
-  abomination: 'Something causing great disgust; forbidden by Torah law',
+  abomination: 'Toʿevah — ritually detestable; forbidden by Torah law and to be shunned',
   leprosy: 'In biblical context: various skin afflictions (ṣaraʿat), not modern leprosy',
   leper: 'A person afflicted with ṣaraʿat (biblical skin affliction)',
   wanton: 'Deliberate and unprovoked; reckless',
@@ -92,7 +98,7 @@ const DEFINITIONS: Record<string, string> = {
   recompense: 'Compensation or reward for effort or loss',
   soothsayer: 'Qosem — one who claims to foretell the future; the practice itself is qesem',
   divination: 'Seeking knowledge of the future through supernatural means',
-  augury: 'Naḥash — divination by interpreting signs and omens',
+  augury: 'Naḥash — reading omens and signs to divine the future',
   phylacteries: 'Tefillin — leather boxes with Torah passages, worn during prayer',
   proselyte: 'Ger — a convert to Judaism',
   loins: 'The area of the hips and lower abdomen; in biblical usage, the seat of strength or procreation',
@@ -162,7 +168,7 @@ const DEFINITIONS: Record<string, string> = {
   cherub: 'Keruv — a winged figure mounted on the Ark’s cover',
   lampstand: 'Menorah — the seven-branched gold lamp, hammered from a single piece, kept burning in the Shrine',
   laver: 'Kiyyor — the bronze basin of water where the priests washed hands and feet before serving',
-  ladles: 'Kappot — small gold pans used to carry incense',
+  ladle: 'Kaf — a small gold pan used to carry incense',
   tongs: 'Melqaḥayim — the gold tongs used to tend the lampstand’s wicks',
   snuffers: 'Implements for trimming and extinguishing lamp wicks',
   grating: 'The bronze mesh set inside the altar to hold the burning wood and let ash fall through',
@@ -278,23 +284,55 @@ const DEFINITIONS: Record<string, string> = {
 // matched in the text, so a verse that says "cubits" or "sockets" is
 // highlighted just as one that says "cubit" or "socket" would be.
 const FORMS: Record<string, string> = {
+  abominate: 'abomination',
+  abominations: 'abomination',
+  augur: 'augury',
+  augurs: 'augury',
   begat: 'beget',
   begot: 'beget',
+  begotten: 'beget',
   cisterns: 'cistern',
+  concubines: 'concubine',
   cubits: 'cubit',
+  expiated: 'expiation',
   fowls: 'fowl',
+  fringe: 'fringes',
   girded: 'gird',
+  girding: 'gird',
+  girt: 'gird',
+  handmaids: 'handmaid',
   harlotry: 'harlot',
+  iniquities: 'iniquity',
+  ladles: 'ladle',
+  lavers: 'laver',
+  lepers: 'leper',
+  leprous: 'leprosy',
   libations: 'libation',
+  nazirites: 'nazirite',
+  oblations: 'oblation',
+  omers: 'omer',
+  patrimonies: 'patrimony',
   planks: 'plank',
+  plundered: 'plunder',
+  requite: 'requital',
+  seahs: 'seah',
+  seraphs: 'seraph',
   sheaves: 'sheaf',
   shekels: 'shekel',
   smiting: 'smite',
   smote: 'smite',
   sockets: 'socket',
+  sojourned: 'sojourn',
+  sojourners: 'sojourn',
+  sojourning: 'sojourn',
+  sojourns: 'sojourn',
+  soothsayers: 'soothsayer',
   soothsaying: 'soothsayer',
+  talents: 'talent',
   terebinths: 'terebinth',
+  thresh: 'threshing',
   wadis: 'wadi',
+  winnow: 'winnowing',
 };
 
 export const GLOSSARY: Record<string, string> = {

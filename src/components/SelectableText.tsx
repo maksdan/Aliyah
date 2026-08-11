@@ -31,13 +31,38 @@ interface Token {
   glossaryKey?: string;
 }
 
+// An em dash is a word separator in this translation ("libation—as an offering"),
+// but a hyphen is part of the word ("Beer-sheba", "Paddan-aram"). Splitting on
+// whitespace alone left 38 tokens — nazirite's, shechem's, ordination—as — that
+// contain a glossary word but could never match it.
+const WORD_BOUNDARY = /(\s+|[—–])/;
+
+export function glossaryKey(part: string): string {
+  return part
+    .replace(/^[^a-zA-Z]+|[^a-zA-Z]+$/g, '')
+    .replace(/[’']s$/, '') // possessive: Shechem's -> shechem
+    .toLowerCase();
+}
+
+// The keys a passage contributes, in order. The parent uses this to work out
+// which occurrence of a word is the first across a whole reading, so it has to
+// tokenize exactly as the renderer below does.
+export function glossaryKeysIn(text: string): string[] {
+  const keys: string[] = [];
+  for (const part of text.split(WORD_BOUNDARY)) {
+    const key = glossaryKey(part);
+    if (key && GLOSSARY[key]) keys.push(key);
+  }
+  return keys;
+}
+
 function tokenize(text: string, allowedKeys?: Set<string>): Token[] {
-  const parts = text.split(/(\s+)/);
+  const parts = text.split(WORD_BOUNDARY);
   const seenInVerse = new Set<string>();
   const result: Token[] = [];
 
   for (const part of parts) {
-    const cleaned = part.replace(/^[^a-zA-Z]+|[^a-zA-Z]+$/g, '').toLowerCase();
+    const cleaned = glossaryKey(part);
     if (
       cleaned &&
       GLOSSARY[cleaned] &&

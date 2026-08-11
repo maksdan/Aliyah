@@ -11,10 +11,9 @@ import {
   View,
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
-import SelectableText from '../components/SelectableText';
+import SelectableText, { glossaryKeysIn } from '../components/SelectableText';
 import { DayReading, Verse, fetchTargumVerses, fetchTodayReading } from '../services/sefaria';
 import { Rite, SEPHARDI_HAFTARAH } from '../data/schedule';
-import { GLOSSARY } from '../data/glossary';
 import { formatAliyotLabel } from '../utils/aliyah';
 import { cancelReminders, requestPermissionAndSchedule, scheduleReminders } from '../services/notifications';
 import { CUSTOM_TRANSLITERATION_ENABLED, PARASHA_TRANSLITERATIONS } from '../data/transliterations';
@@ -384,9 +383,8 @@ export default function HomeScreen() {
     const seen = new Set<string>();
     return reading.verses.map(verse => {
       const allowed = new Set<string>();
-      for (const part of verse.en.split(/\s+/)) {
-        const key = part.replace(/^[^a-zA-Z]+|[^a-zA-Z]+$/g, '').toLowerCase();
-        if (GLOSSARY[key] && !seen.has(key)) {
+      for (const key of glossaryKeysIn(verse.en)) {
+        if (!seen.has(key)) {
           seen.add(key);
           allowed.add(key);
         }
