@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Platform, StyleSheet, Text, TextInput, TextStyle } from 'react-native';
 import { GLOSSARY } from '../data/glossary';
 
@@ -80,6 +80,28 @@ export default function SelectableText({
     [text, allowedKeys, onWordSelect],
   );
 
+  // Yoga measures an auto-sizing multiline TextInput without honouring a
+  // custom lineHeight, so the box comes out roughly a line short and the tail
+  // of the passage — the last words and the sof pasuq — gets clipped. Take the
+  // height from the native text engine instead, which measures what it drew.
+  //
+  // The measurement is stored with the string it was taken from: on a day
+  // change the component is reused with new text, and a height left over from
+  // the previous passage would clip it exactly the same way.
+  const [measured, setMeasured] = useState<{ text: string; height: number } | null>(null);
+  const height = measured && measured.text === text ? measured.height : undefined;
+  const handleContentSize = useCallback(
+    (h: number) => {
+      const next = Math.ceil(h);
+      setMeasured(prev =>
+        prev && prev.text === text && Math.abs(prev.height - next) < 1
+          ? prev
+          : { text, height: next },
+      );
+    },
+    [text],
+  );
+
   const handleSelectionChange = useCallback(
     (start: number, end: number) => {
       if (!onWordSelect || end <= start) return;
@@ -97,13 +119,14 @@ export default function SelectableText({
 
   return (
     <TextInput
-      style={[styles.base, style]}
+      style={[styles.base, style, height !== undefined && { height }]}
       editable={false}
       multiline
       scrollEnabled={false}
       selectTextOnFocus={false}
       // Android needs this to stop the field grabbing focus like an input.
       showSoftInputOnFocus={false}
+      onContentSizeChange={e => handleContentSize(e.nativeEvent.contentSize.height)}
       onSelectionChange={
         onWordSelect
           ? e => handleSelectionChange(e.nativeEvent.selection.start, e.nativeEvent.selection.end)

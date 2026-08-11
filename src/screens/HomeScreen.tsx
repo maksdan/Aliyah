@@ -82,6 +82,10 @@ export default function HomeScreen() {
   const shownDateRef = useRef(new Date());
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // --- Targum request tracking --------------------------------------------
+  const targumReqRef = useRef<string | null>(null); // passage we've requested
+  const shownRefRef = useRef<string | null>(null);  // passage currently on screen
+
   // Animate streak toast in, hold, then fade out.
   useEffect(() => {
     if (!showStreakBanner) return;
@@ -98,6 +102,8 @@ export default function HomeScreen() {
     setError(null);
     setTargumVerses(null);
     setTargumUnavailable(false);
+    setTargumLoading(false);
+    targumReqRef.current = null; // a new day means a new Onkelos passage
     const target = new Date();
     target.setDate(target.getDate() + offsetDays);
     shownDateRef.current = target;
@@ -168,23 +174,34 @@ export default function HomeScreen() {
     saveRite(newRite);
   }, []);
 
+  // Keeps the ref of the reading actually on screen, so a late Onkelos
+  // response for a day we've navigated away from can be dropped.
+  useEffect(() => {
+    shownRefRef.current = reading?.ref ?? null;
+  }, [reading]);
+
   // Fetch Onkelos whenever the Aramaic tab is showing and we don't have it —
   // covers both tapping the tab and carrying the tab across a day change.
+  //
+  // The in-flight fetch is tracked on a ref, not in state: putting the loading
+  // flag in this effect's deps made it tear itself down the moment it set that
+  // flag, cancelling its own request and wedging the tab on a spinner.
   useEffect(() => {
     if (effectiveMode !== 'targum' || !reading) return;
-    if (targumVerses || targumLoading || targumUnavailable) return;
-    let cancelled = false;
+    const ref = reading.ref;
+    if (targumReqRef.current === ref) return; // already asked for this passage
+    targumReqRef.current = ref;
     setTargumLoading(true);
-    fetchTargumVerses(reading.ref).then(verses => {
-      if (cancelled) return;
-      setTargumLoading(false);
-      if (verses) setTargumVerses(verses);
-      else setTargumUnavailable(true);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [effectiveMode, reading, targumVerses, targumLoading, targumUnavailable]);
+    fetchTargumVerses(ref)
+      .then(verses => {
+        if (shownRefRef.current !== ref) return; // stale — the day moved on
+        if (verses) setTargumVerses(verses);
+        else setTargumUnavailable(true);
+      })
+      .finally(() => {
+        if (shownRefRef.current === ref) setTargumLoading(false);
+      });
+  }, [effectiveMode, reading]);
 
   // --- Scroll position ----------------------------------------------------
   const handleScroll = useCallback((y: number) => {
