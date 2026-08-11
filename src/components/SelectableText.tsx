@@ -1,22 +1,20 @@
-import { useCallback, useMemo, useState } from 'react';
-import { Platform, StyleSheet, Text, TextInput, TextStyle } from 'react-native';
+import { useMemo } from 'react';
+import { StyleSheet, Text, TextStyle } from 'react-native';
 import { GLOSSARY } from '../data/glossary';
 
-// Why a read-only TextInput instead of <Text selectable>:
+// Renders a passage as plain <Text>.
 //
-// <Text selectable> is unreliable on current iOS — it pops the copy menu but
-// never shows a selection highlight or drag handles, so you cannot extend a
-// selection across words (facebook/react-native#54686, #55187). A multiline
-// TextInput with editable={false} is backed by a real UITextView, which gives
-// the ordinary system behaviour: press and hold, drag the handles, Copy /
-// Look Up / Share.
+// An earlier version rendered each passage as a read-only multiline TextInput
+// to get real drag-selection. That clipped the text: RN measures an
+// auto-sizing TextInput with Yoga, but UITextView lays the text out itself, and
+// the two disagree once a custom lineHeight is involved — so the last line of
+// every verse, the closing words and the sof pasuq, was cut off. Driving the
+// height from onContentSizeChange did not fix it either.
 //
-// The trade-off is that touch handlers on nested <Text> do not fire inside a
-// TextInput — styles apply, presses do not. So a glossary word can no longer
-// be *tapped*; instead we watch the selection, and when it lands on exactly one
-// highlighted word we show its definition. Double-tap (or press-and-hold) on a
-// word is precisely the gesture iOS uses to select one word, so the definition
-// comes up on the same gesture a reader would already use.
+// Correct, complete text matters more than the selection gesture, and <Text>
+// has always measured correctly here. Free-form selection across the whole
+// passage now lives behind the "select text" button instead, where the
+// TextInput can scroll and therefore needs no intrinsic measurement at all.
 
 interface SelectableTextProps {
   text: string;
@@ -25,16 +23,12 @@ interface SelectableTextProps {
   // The parent uses this to restrict highlighting to the first occurrence
   // across the whole reading.
   allowedKeys?: Set<string>;
-  onWordSelect?: (word: string, definition: string) => void;
+  onWordPress?: (word: string, definition: string) => void;
 }
 
 interface Token {
   text: string;
   glossaryKey?: string;
-}
-
-function normalize(word: string): string {
-  return word.replace(/^[^a-zA-Z]+|[^a-zA-Z]+$/g, '').toLowerCase();
 }
 
 function tokenize(text: string, allowedKeys?: Set<string>): Token[] {
@@ -43,7 +37,7 @@ function tokenize(text: string, allowedKeys?: Set<string>): Token[] {
   const result: Token[] = [];
 
   for (const part of parts) {
-    const cleaned = normalize(part);
+    const cleaned = part.replace(/^[^a-zA-Z]+|[^a-zA-Z]+$/g, '').toLowerCase();
     if (
       cleaned &&
       GLOSSARY[cleaned] &&
@@ -73,92 +67,41 @@ export default function SelectableText({
   text,
   style,
   allowedKeys,
-  onWordSelect,
+  onWordPress,
 }: SelectableTextProps) {
   const tokens = useMemo(
-    () => (onWordSelect ? tokenize(text, allowedKeys) : null),
-    [text, allowedKeys, onWordSelect],
+    () => (onWordPress ? tokenize(text, allowedKeys) : null),
+    [text, allowedKeys, onWordPress],
   );
 
-  // Yoga measures an auto-sizing multiline TextInput without honouring a
-  // custom lineHeight, so the box comes out roughly a line short and the tail
-  // of the passage — the last words and the sof pasuq — gets clipped. Take the
-  // height from the native text engine instead, which measures what it drew.
-  //
-  // The measurement is stored with the string it was taken from: on a day
-  // change the component is reused with new text, and a height left over from
-  // the previous passage would clip it exactly the same way.
-  const [measured, setMeasured] = useState<{ text: string; height: number } | null>(null);
-  const height = measured && measured.text === text ? measured.height : undefined;
-  const handleContentSize = useCallback(
-    (h: number) => {
-      const next = Math.ceil(h);
-      setMeasured(prev =>
-        prev && prev.text === text && Math.abs(prev.height - next) < 1
-          ? prev
-          : { text, height: next },
-      );
-    },
-    [text],
-  );
-
-  const handleSelectionChange = useCallback(
-    (start: number, end: number) => {
-      if (!onWordSelect || end <= start) return;
-      // Only a single-word selection opens a definition; dragging across a
-      // phrase is an ordinary copy and must stay out of the way.
-      const selected = text.slice(start, end).trim();
-      if (!selected || /\s/.test(selected)) return;
-      const key = normalize(selected);
-      if (!key || !GLOSSARY[key]) return;
-      if (allowedKeys && !allowedKeys.has(key)) return;
-      onWordSelect(key, GLOSSARY[key]);
-    },
-    [text, allowedKeys, onWordSelect],
-  );
+  if (!tokens) {
+    return (
+      <Text style={style} selectable>
+        {text}
+      </Text>
+    );
+  }
 
   return (
-    <TextInput
-      style={[styles.base, style, height !== undefined && { height }]}
-      editable={false}
-      multiline
-      scrollEnabled={false}
-      selectTextOnFocus={false}
-      // Android needs this to stop the field grabbing focus like an input.
-      showSoftInputOnFocus={false}
-      onContentSizeChange={e => handleContentSize(e.nativeEvent.contentSize.height)}
-      onSelectionChange={
-        onWordSelect
-          ? e => handleSelectionChange(e.nativeEvent.selection.start, e.nativeEvent.selection.end)
-          : undefined
-      }
-    >
-      {tokens
-        ? tokens.map((token, i) =>
-            token.glossaryKey ? (
-              <Text key={i} style={styles.glossaryWord}>
-                {token.text}
-              </Text>
-            ) : (
-              token.text
-            ),
-          )
-        : text}
-    </TextInput>
+    <Text style={style} selectable>
+      {tokens.map((token, i) =>
+        token.glossaryKey ? (
+          <Text
+            key={i}
+            style={styles.glossaryWord}
+            onPress={() => onWordPress!(token.glossaryKey!, GLOSSARY[token.glossaryKey!])}
+          >
+            {token.text}
+          </Text>
+        ) : (
+          token.text
+        ),
+      )}
+    </Text>
   );
 }
 
 const styles = StyleSheet.create({
-  base: {
-    // TextInput carries platform chrome a Text does not; strip it so the
-    // passage sits exactly where the old <Text> did.
-    padding: 0,
-    margin: 0,
-    ...Platform.select({
-      android: { textAlignVertical: 'top', includeFontPadding: false },
-      default: {},
-    }),
-  },
   glossaryWord: {
     backgroundColor: 'rgba(176, 146, 106, 0.25)',
   },

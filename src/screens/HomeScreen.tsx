@@ -7,6 +7,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -68,6 +69,7 @@ export default function HomeScreen() {
   const [streak, setStreak] = useState(0);
   const [showStreakBanner, setShowStreakBanner] = useState(false);
   const [glossaryWord, setGlossaryWord] = useState<{ word: string; definition: string } | null>(null);
+  const [selectionOpen, setSelectionOpen] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const copiedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const toastAnim = useRef(new Animated.Value(0)).current;
@@ -350,6 +352,17 @@ export default function HomeScreen() {
   const readingMinutes = Math.max(1, Math.round(totalWords / 200));
   const sectionLabel = reading.isHaftarah ? 'Haftarah' : formatAliyotLabel(reading.aliyot);
 
+  // Whatever is on screen for this day, as one string, so a selection can run
+  // across verses instead of stopping at each one.
+  const selectionBody = reading.verses
+    .map((verse, i) => {
+      const lines = [`${reading.book} ${verse.ref}`, verse.he];
+      if (effectiveMode === 'bilingual' && verse.en) lines.push(verse.en);
+      if (effectiveMode === 'targum' && targumVerses?.[i]?.he) lines.push(targumVerses[i].he);
+      return lines.filter(Boolean).join('\n');
+    })
+    .join('\n\n');
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -396,6 +409,14 @@ export default function HomeScreen() {
           </Pressable>
         ))}
         <Text style={styles.readingTime}>~{readingMinutes} min</Text>
+        <Pressable
+          onPress={() => setSelectionOpen(true)}
+          hitSlop={8}
+          style={styles.selectBtn}
+          accessibilityLabel="Select and copy text"
+        >
+          <Text style={styles.selectBtnText}>Select</Text>
+        </Pressable>
       </View>
 
       {/* Text Content */}
@@ -431,7 +452,7 @@ export default function HomeScreen() {
                   text={verse.en}
                   style={styles.englishText}
                   allowedKeys={verseGlossaryKeys[i]}
-                  onWordSelect={(word, definition) => setGlossaryWord({ word, definition })}
+                  onWordPress={(word, definition) => setGlossaryWord({ word, definition })}
                 />
               )}
               {effectiveMode === 'targum' && targumVerse && (
@@ -453,6 +474,33 @@ export default function HomeScreen() {
           );
         })}
       </ScrollView>
+
+      {/* Free selection sheet.
+          A scrolling TextInput has a fixed frame, so unlike an auto-sizing one
+          it needs no intrinsic measurement and cannot clip the passage. This is
+          also the only place you can drag a selection across several verses. */}
+      <Modal
+        visible={selectionOpen}
+        animationType="slide"
+        onRequestClose={() => setSelectionOpen(false)}
+      >
+        <View style={styles.sheet}>
+          <View style={styles.sheetHeader}>
+            <Text style={styles.sheetTitle}>{reading.ref}</Text>
+            <Pressable onPress={() => setSelectionOpen(false)} hitSlop={12}>
+              <Text style={styles.sheetDone}>Done</Text>
+            </Pressable>
+          </View>
+          <Text style={styles.sheetHint}>Press and hold to select, then drag the handles.</Text>
+          <TextInput
+            style={styles.sheetBody}
+            value={selectionBody}
+            editable={false}
+            multiline
+            scrollEnabled
+          />
+        </View>
+      </Modal>
 
       {/* Glossary Popup */}
       <Modal
@@ -783,6 +831,60 @@ const styles = StyleSheet.create({
     color: MID,
     alignSelf: 'center',
     marginLeft: 4,
+  },
+  selectBtn: {
+    alignSelf: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#D8C4A4',
+  },
+  selectBtnText: {
+    fontSize: 12,
+    color: BROWN,
+    fontWeight: '600',
+    letterSpacing: 0.2,
+  },
+  sheet: {
+    flex: 1,
+    backgroundColor: PARCHMENT,
+    paddingTop: 60,
+  },
+  sheetHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingBottom: 8,
+  },
+  sheetTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: DARK,
+    flexShrink: 1,
+  },
+  sheetDone: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: BROWN,
+  },
+  sheetHint: {
+    fontSize: 12,
+    color: MID,
+    paddingHorizontal: 20,
+    paddingBottom: 10,
+  },
+  sheetBody: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingBottom: 24,
+    fontFamily: 'TaameyFrank_Regular',
+    fontSize: 20,
+    lineHeight: 36,
+    color: DARK,
+    textAlign: 'auto',
+    writingDirection: 'auto',
   },
   shabbatText: {
     fontSize: 17,
