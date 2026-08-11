@@ -21,6 +21,13 @@
 // no longer appear; they are harmless and cost nothing, and would come back
 // into play if the translation source ever changes.
 //
+// Keys are matched against the English *after* transliterateNouns runs. That is
+// a no-op today (CUSTOM_TRANSLITERATION_ENABLED is false), but flipping it on
+// rewrites the spellings 50 of these keys depend on — Shechem becomes Shekhem,
+// Horeb Ḥorev, Beer-sheba Beʾer-Shevaʿ — and each one would quietly stop
+// highlighting. Turning that flag on means adding the transliterated spellings
+// to FORMS in the same change.
+//
 // Each concept is defined exactly once. Inflections — cubit/cubits,
 // socket/sockets, beget/begat/begot — are listed in FORMS and resolve to their
 // lemma's definition instead of repeating it. They have to stay matchable:
@@ -28,12 +35,21 @@
 // dropping a plural would quietly stop most of those verses highlighting.
 //
 // FORMS was built by sweeping every English verse of the year for inflections
-// of each concept, so it is meant to be exhaustive. Two look like omissions and
-// are not: "shrines" is Topheth's pagan shrines, not the Tabernacle's inner
-// room, and "enclosures" is sheepfolds, not the Tabernacle courtyard. Both
-// would hand the reader the wrong definition.
+// of each concept, so it is meant to be exhaustive — scripts/audit-readings.mjs
+// re-runs that sweep over all 8,575 verses and reports anything unlisted.
+//
+// What looks like an omission below is a homonym that would hand the reader the
+// wrong definition, and each was read in context before being left out:
+// "shrines" is Topheth's pagan shrines, not the Tabernacle's inner room;
+// "enclosures" is sheepfolds, not the courtyard; a "fringed tunic" is checkwork,
+// not ṣiṣit; "clasped his feet" is not the curtain clasps; "snuffing the wind"
+// is not the lampstand snuffers; "lamps" are the vessels, not the lampstand;
+// "jubilation" is hillulim, not the yovel; and modern "require"/"required" is
+// not requital, though "requited", "requites" and "requiting" are. Likewise the
+// near-namesakes that are simply other people and places: Tamar, Shepham,
+// Shepher, Shepho, Massa, Timna, Shinab.
 
-const DEFINITIONS: Record<string, string> = {
+export const DEFINITIONS: Record<string, string> = {
   // ===================== ARCHAIC / LESS COMMON ENGLISH =====================
   bards: 'Poets or storytellers who compose verse',
   wroth: 'Very angry; furious',
@@ -164,8 +180,7 @@ const DEFINITIONS: Record<string, string> = {
   tenons: 'The projecting pegs at the foot of each plank that slotted into its silver sockets',
   clasps: 'Qerasim — the gold or bronze hooks that joined the Tabernacle’s curtain sets into one cover',
   loops: 'The fabric eyelets sewn along the curtain edges, joined by the clasps',
-  cherubim: 'Keruvim — winged figures whose outstretched wings arched over the Ark’s cover, marking God’s throne',
-  cherub: 'Keruv — a winged figure mounted on the Ark’s cover',
+  cherub: 'Keruv (plural keruvim) — a winged figure whose outstretched wings arched over the Ark’s cover, marking God’s throne',
   lampstand: 'Menorah — the seven-branched gold lamp, hammered from a single piece, kept burning in the Shrine',
   laver: 'Kiyyor — the bronze basin of water where the priests washed hands and feet before serving',
   ladle: 'Kaf — a small gold pan used to carry incense',
@@ -241,7 +256,7 @@ const DEFINITIONS: Record<string, string> = {
   moab: 'The kingdom on the high plateau east of the Dead Sea',
   edom: 'The rugged red-rock highlands south of the Dead Sea, Esau’s territory',
   seir: 'The mountain range of Edom, south-east of the Dead Sea',
-  midian: 'A desert region east of the Gulf of Aqaba where Moses took refuge and married',
+  midian: 'Midyan — a desert region east of the Gulf of Aqaba, and the people of it; where Moses took refuge and married',
   amalek: 'A nomadic desert people of the Negev and Sinai who attacked Israel’s stragglers after the Exodus',
   arnon: 'The deep river gorge draining into the Dead Sea that formed Moab’s northern boundary',
   jabbok: 'A tributary gorge of the Jordan, where Jacob wrestled through the night',
@@ -283,41 +298,64 @@ const DEFINITIONS: Record<string, string> = {
 // rather than repeating it — one concept, written once — while still being
 // matched in the text, so a verse that says "cubits" or "sockets" is
 // highlighted just as one that says "cubit" or "socket" would be.
-const FORMS: Record<string, string> = {
+export const FORMS: Record<string, string> = {
+  abominable: 'abomination',
   abominate: 'abomination',
   abominations: 'abomination',
+  amalekites: 'amalek',
   augur: 'augury',
   augurs: 'augury',
+  'azazel-goat': 'azazel',
   begat: 'beget',
   begot: 'beget',
   begotten: 'beget',
+  cherubim: 'cherub',
   cisterns: 'cistern',
   concubines: 'concubine',
   cubits: 'cubit',
+  'dibon-gad': 'dibon',
+  diviner: 'divination',
+  divining: 'divination',
+  elevate: 'elevation',
+  elevated: 'elevation',
   expiated: 'expiation',
   fowls: 'fowl',
   fringe: 'fringes',
+  gileadite: 'gilead',
+  gileadites: 'gilead',
   girded: 'gird',
   girding: 'gird',
   girt: 'gird',
   handmaids: 'handmaid',
   harlotry: 'harlot',
   iniquities: 'iniquity',
+  iniquitous: 'iniquity',
   ladles: 'ladle',
+  lampstands: 'lampstand',
   lavers: 'laver',
   lepers: 'leper',
   leprous: 'leprosy',
   libations: 'libation',
+  midianite: 'midian',
+  midianites: 'midian',
   nazirites: 'nazirite',
   oblations: 'oblation',
   omers: 'omer',
+  paddan: 'paddan-aram',
   patrimonies: 'patrimony',
+  philistines: 'philistia',
   planks: 'plank',
   plundered: 'plunder',
+  plunderers: 'plunder',
+  ravenous: 'ravening',
   requite: 'requital',
+  requited: 'requital',
+  requites: 'requital',
+  requiting: 'requital',
   seahs: 'seah',
   seraphs: 'seraph',
   sheaves: 'sheaf',
+  shechemites: 'shechem',
   shekels: 'shekel',
   smiting: 'smite',
   smote: 'smite',
@@ -329,15 +367,22 @@ const FORMS: Record<string, string> = {
   soothsayers: 'soothsayer',
   soothsaying: 'soothsayer',
   talents: 'talent',
+  temanites: 'teman',
   terebinths: 'terebinth',
   thresh: 'threshing',
+  thresher: 'threshing',
+  vintagers: 'vintage',
   wadis: 'wadi',
   winnow: 'winnowing',
 };
 
+// A form whose lemma is missing or misspelled would resolve to undefined and
+// open an empty definition card, so such an entry is dropped rather than shown.
 export const GLOSSARY: Record<string, string> = {
   ...DEFINITIONS,
   ...Object.fromEntries(
-    Object.entries(FORMS).map(([form, lemma]) => [form, DEFINITIONS[lemma]]),
+    Object.entries(FORMS)
+      .filter(([, lemma]) => typeof DEFINITIONS[lemma] === 'string')
+      .map(([form, lemma]) => [form, DEFINITIONS[lemma]]),
   ),
 };
