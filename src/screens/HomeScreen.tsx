@@ -91,10 +91,30 @@ export default function HomeScreen() {
   const reanchorRef = useRef<number | null>(null);
   const shownDateRef = useRef(new Date());
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // --- Targum request tracking --------------------------------------------
   const targumReqRef = useRef<string | null>(null); // passage we've requested
   const shownRefRef = useRef<string | null>(null);  // passage currently on screen
+
+  // An outstanding restore suppresses position saves, so it must never be able
+  // to outlive the layout it was waiting for — every claim is time-bounded.
+  const endRestore = useCallback(() => {
+    if (settleTimer.current) {
+      clearTimeout(settleTimer.current);
+      settleTimer.current = null;
+    }
+    pendingScrollRef.current = null;
+  }, []);
+
+  const claimRestore = useCallback(
+    (pending: PendingScroll) => {
+      pendingScrollRef.current = pending;
+      if (settleTimer.current) clearTimeout(settleTimer.current);
+      settleTimer.current = setTimeout(endRestore, 1500);
+    },
+    [endRestore],
+  );
 
   // Animate streak toast in, hold, then fade out.
   useEffect(() => {
@@ -120,7 +140,7 @@ export default function HomeScreen() {
     shownDateRef.current = target;
     // Claim the restore before any content renders, so the ScrollView can't
     // linger at the outgoing day's offset.
-    pendingScrollRef.current = { kind: 'offset', y: 0 };
+    claimRestore({ kind: 'offset', y: 0 });
     verseOffsetsRef.current = [];
     try {
       const [result, read, savedY] = await Promise.all([
@@ -128,7 +148,7 @@ export default function HomeScreen() {
         isDateRead(target),
         getReadingPosition(target),
       ]);
-      pendingScrollRef.current = { kind: 'offset', y: savedY };
+      claimRestore({ kind: 'offset', y: savedY });
       setReading(result);
       setIsRead(read);
       // Only manage reminders based on today's reading, not a navigated day.
@@ -170,6 +190,7 @@ export default function HomeScreen() {
   useEffect(() => () => {
     if (copiedTimer.current) clearTimeout(copiedTimer.current);
     if (saveTimer.current) clearTimeout(saveTimer.current);
+    if (settleTimer.current) clearTimeout(settleTimer.current);
   }, []);
 
   // Haftarah has no Onkelos, so it always displays bilingually — without
@@ -196,7 +217,7 @@ export default function HomeScreen() {
     (newMode: DisplayMode) => {
       if (newMode === mode) return;
       const index = topVerseIndex();
-      pendingScrollRef.current = { kind: 'verse', index };
+      claimRestore({ kind: 'verse', index });
       verseOffsetsRef.current = []; // every offset is about to change
       // If the Aramaic still has to be fetched, hold the anchor until it lands.
       reanchorRef.current = newMode === 'targum' && !targumVerses ? index : null;
@@ -209,7 +230,7 @@ export default function HomeScreen() {
   // Onkelos arrived and pushed every verse down — go back to the anchor.
   useEffect(() => {
     if (!targumVerses || reanchorRef.current === null) return;
-    pendingScrollRef.current = { kind: 'verse', index: reanchorRef.current };
+    claimRestore({ kind: 'verse', index: reanchorRef.current });
     verseOffsetsRef.current = [];
     reanchorRef.current = null;
   }, [targumVerses]);
@@ -249,19 +270,41 @@ export default function HomeScreen() {
   }, [effectiveMode, reading]);
 
   // --- Scroll position ----------------------------------------------------
-  const handleScroll = useCallback((y: number) => {
-    scrollYRef.current = y;
+  // A restore must always finish, even when it cannot be honoured. It used to
+  // be cleared only on full success, so returning to a day whose aliyah was
+  // shorter than the saved offset left it outstanding forever — and because an
+  // outstanding restore suppresses saving, no position was recorded again for
+  // the rest of the session. Hence endRestore and its settle timer, above.
+  const commitPosition = useCallback((y: number) => {
     if (pendingScrollRef.current !== null) return; // restore still in flight
-    // A deliberate scroll wins over a queued re-anchor.
-    reanchorRef.current = null;
-    const date = shownDateRef.current;
-    if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => saveReadingPosition(date, y), 400);
+    if (saveTimer.current) {
+      clearTimeout(saveTimer.current);
+      saveTimer.current = null;
+    }
+    saveReadingPosition(shownDateRef.current, y);
   }, []);
 
+  const handleScroll = useCallback(
+    (y: number) => {
+      scrollYRef.current = y;
+      if (pendingScrollRef.current !== null) return;
+      // A deliberate scroll wins over a queued re-anchor.
+      reanchorRef.current = null;
+      const date = shownDateRef.current;
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+      saveTimer.current = setTimeout(() => saveReadingPosition(date, y), 400);
+    },
+    [],
+  );
+
+  // Write the position now rather than waiting out the debounce — used when
+  // leaving the day, where the debounce could otherwise lose the last scroll.
+  const flushPosition = useCallback(() => {
+    commitPosition(scrollYRef.current);
+  }, [commitPosition]);
+
   // Content lays out in stages, so keep re-applying the target until the page
-  // is actually tall enough to honour it. A day shorter than the saved offset
-  // simply lands at the end; the next load replaces the target either way.
+  // is tall enough to honour it, then stop waiting either way.
   const applyPendingScroll = useCallback(() => {
     const pending = pendingScrollRef.current;
     if (pending === null || !scrollRef.current) return;
@@ -271,12 +314,19 @@ export default function HomeScreen() {
     } else {
       const y = verseOffsetsRef.current[pending.index];
       if (y === undefined) return; // that verse hasn't been laid out yet
-      target = y;
+      target = Math.max(0, y - 8); // a little air above the verse number
     }
     const max = Math.max(0, contentHeightRef.current - viewportRef.current);
     scrollRef.current.scrollTo({ y: Math.min(target, max), animated: false });
-    if (target <= max) pendingScrollRef.current = null;
-  }, []);
+    if (target <= max) {
+      endRestore();
+      return;
+    }
+    // Short of the target: the page may still be growing, so try again on the
+    // next layout — but give up shortly so saving resumes regardless.
+    if (settleTimer.current) clearTimeout(settleTimer.current);
+    settleTimer.current = setTimeout(endRestore, 500);
+  }, [endRestore]);
 
   const handleContentSizeChange = useCallback(
     (_w: number, h: number) => {
@@ -286,11 +336,12 @@ export default function HomeScreen() {
     [applyPendingScroll],
   );
 
-  // Each verse reports where it sits so we can anchor to it later.
+  // Each verse reports where it sits, both to anchor on later and to drive the
+  // restore: content size alone is not a reliable enough signal to hang it on.
   const handleVerseLayout = useCallback(
     (index: number, y: number) => {
       verseOffsetsRef.current[index] = y;
-      if (pendingScrollRef.current?.kind === 'verse') applyPendingScroll();
+      applyPendingScroll();
     },
     [applyPendingScroll],
   );
@@ -375,7 +426,10 @@ export default function HomeScreen() {
   const navRow = (
     <View style={styles.navRow}>
       <Pressable
-        onPress={() => setOffsetDays(o => o - 1)}
+        onPress={() => {
+          flushPosition();
+          setOffsetDays(o => o - 1);
+        }}
         hitSlop={16}
         disabled={loading}
         accessibilityLabel="Previous day"
@@ -383,14 +437,24 @@ export default function HomeScreen() {
         <Text style={[styles.navArrow, loading && styles.navArrowDisabled]}>‹</Text>
       </Pressable>
       {offsetDays !== 0 ? (
-        <Pressable onPress={() => setOffsetDays(0)} hitSlop={8} accessibilityLabel="Return to today">
+        <Pressable
+          onPress={() => {
+            flushPosition();
+            setOffsetDays(0);
+          }}
+          hitSlop={8}
+          accessibilityLabel="Return to today"
+        >
           <Text style={[styles.navLabel, styles.navLabelTappable]}>{navLabel}</Text>
         </Pressable>
       ) : (
         <Text style={styles.navLabel}>{navLabel}</Text>
       )}
       <Pressable
-        onPress={() => setOffsetDays(o => o + 1)}
+        onPress={() => {
+          flushPosition();
+          setOffsetDays(o => o + 1);
+        }}
         hitSlop={16}
         disabled={loading}
         accessibilityLabel="Next day"
@@ -480,6 +544,10 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
         scrollEventThrottle={16}
         onScroll={e => handleScroll(e.nativeEvent.contentOffset.y)}
+        // End-of-gesture writes, so a position never depends on the debounce
+        // getting a chance to fire before the reader navigates away.
+        onScrollEndDrag={e => commitPosition(e.nativeEvent.contentOffset.y)}
+        onMomentumScrollEnd={e => commitPosition(e.nativeEvent.contentOffset.y)}
         onLayout={e => { viewportRef.current = e.nativeEvent.layout.height; }}
         onContentSizeChange={handleContentSizeChange}
       >
