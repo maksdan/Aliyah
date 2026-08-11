@@ -23,11 +23,23 @@ Press `i` to open in the iOS simulator, or scan the QR code with Expo Go.
 
 ## Hebrew type
 
-The Hebrew text is set in **Keter YG** (Culmus project), not a general-purpose
-Hebrew face. It carries the Tiro Typeworks Biblical Hebrew OpenType layout
-logic, so cantillation marks stack clear of the vowel points. Measured across
-all five books, Keter YG collides on 0.0% of multi-mark clusters versus 12.9%
-for Noto Serif Hebrew. Licence: `assets/fonts/LICENSE-KeterYG.txt`.
+The Hebrew is set in **Taamey Frank CLM** (Culmus project) — Rafael Frank's
+Frank-Ruehl of 1908, the classical Hebrew book face, in the Taamey cut that
+carries the Tiro Typeworks Biblical Hebrew OpenType layout logic. That layout
+logic is the point: cantillation marks stack clear of the vowel points instead
+of colliding with them. Measured over all five books, it collides on 0.0% of
+multi-mark clusters (21 of 59,368) against 12.9% for Noto Serif Hebrew.
+Licence: `assets/fonts/LICENSE-Culmus.txt`.
+
+## Text selection
+
+Passages render as read-only `TextInput`s rather than `Text`, because
+`<Text selectable>` on current iOS shows a copy menu without a real selection
+(facebook/react-native#54686, #55187). A multiline `TextInput` with
+`editable={false}` is a genuine `UITextView`, so press-and-hold, drag handles
+and Look Up all behave normally. The cost is that nested press handlers do not
+fire inside a `TextInput`, so a definition opens when the selection lands on a
+single highlighted word — the same gesture iOS already uses to select a word.
 
 ## Tech Stack
 

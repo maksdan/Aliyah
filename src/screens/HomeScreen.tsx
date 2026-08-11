@@ -11,7 +11,7 @@ import {
   View,
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
-import AnnotatedText from '../components/AnnotatedText';
+import SelectableText from '../components/SelectableText';
 import { DayReading, Verse, fetchTargumVerses, fetchTodayReading } from '../services/sefaria';
 import { Rite, SEPHARDI_HAFTARAH } from '../data/schedule';
 import { GLOSSARY } from '../data/glossary';
@@ -237,7 +237,7 @@ export default function HomeScreen() {
   };
 
   // Pre-compute which glossary keys appear for the first time in each verse,
-  // so AnnotatedText highlights only the first occurrence across the whole reading.
+  // so SelectableText highlights only the first occurrence across the whole reading.
   const verseGlossaryKeys = useMemo(() => {
     if (!reading) return [] as Set<string>[];
     const seen = new Set<string>();
@@ -408,18 +408,17 @@ export default function HomeScreen() {
                 <Text style={styles.verseNumber}>{i + 1}</Text>
                 <Text style={styles.verseRef}>{verse.ref}</Text>
               </View>
-              <Text style={styles.hebrewText} selectable>{verse.he}</Text>
+              <SelectableText text={verse.he} style={styles.hebrewText} />
               {effectiveMode === 'bilingual' && (
-                <AnnotatedText
+                <SelectableText
                   text={verse.en}
                   style={styles.englishText}
                   allowedKeys={verseGlossaryKeys[i]}
-                  selectable
-                  onWordPress={(word, definition) => setGlossaryWord({ word, definition })}
+                  onWordSelect={(word, definition) => setGlossaryWord({ word, definition })}
                 />
               )}
               {effectiveMode === 'targum' && targumVerse && (
-                <Text style={styles.targumText} selectable>{targumVerse.he}</Text>
+                <SelectableText text={targumVerse.he} style={styles.targumText} />
               )}
               <View style={styles.copyRow}>
                 <TouchableOpacity
@@ -561,9 +560,9 @@ const styles = StyleSheet.create({
     textDecorationLine: 'underline',
   },
   parashaHe: {
-    fontSize: 30,
+    fontSize: 32,
     color: '#FDF6E3',
-    fontFamily: 'KeterYG_Bold',
+    fontFamily: 'TaameyFrank_Bold',
     marginBottom: 0,
   },
   parashaEn: {
@@ -587,10 +586,10 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   refLabel: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#C4A882',
     marginTop: 2,
-    fontFamily: 'KeterYG_Regular',
+    fontFamily: 'TaameyFrank_Regular',
   },
   refLabelEn: {
     fontSize: 12,
@@ -697,13 +696,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   hebrewText: {
-    fontFamily: 'KeterYG_Regular',
-    // Keter YG sets its letters ~9% smaller per em than Noto did, so 24 here
-    // matches the old 22 optically. Its ink spans 1.286em once ta'amim stack
-    // below the niqud, i.e. 30.9px at this size — 44 keeps a clear 13px gutter
-    // between lines so accents never touch the row above.
-    fontSize: 24,
-    lineHeight: 44,
+    fontFamily: 'TaameyFrank_Regular',
+    // Frank-Ruehl runs small per em (letter height 0.552em vs Noto's 0.647), so
+    // 26 here matches the original 22 optically. Its ink spans 1.221em once
+    // ta'amim stack below the niqud — 31.7px at this size — and 46 leaves a
+    // clear ~14px gutter so accents never reach the row above.
+    fontSize: 26,
+    lineHeight: 46,
     color: DARK,
     textAlign: 'right',
     writingDirection: 'rtl',
@@ -718,9 +717,9 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
   targumText: {
-    fontFamily: 'KeterYG_Regular',
-    fontSize: 21,
-    lineHeight: 38,
+    fontFamily: 'TaameyFrank_Regular',
+    fontSize: 22,
+    lineHeight: 40,
     color: '#5C3D1E',
     textAlign: 'right',
     writingDirection: 'rtl',

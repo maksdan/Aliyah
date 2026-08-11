@@ -6,12 +6,13 @@ import HomeScreen from './src/screens/HomeScreen';
 import { requestPermissionAndSchedule } from './src/services/notifications';
 
 export default function App() {
-  // Keter YG (Culmus) rather than a general-purpose Hebrew face: it carries the
-  // Tiro Typeworks Biblical Hebrew layout logic, so ta'amim stack clear of the
-  // niqud instead of colliding with them. See assets/fonts/LICENSE-KeterYG.txt.
+  // Taamey Frank CLM (Culmus): Rafael Frank's 1908 Frank-Ruehl, the classical
+  // Hebrew book face, in the Taamey cut that carries the Tiro Typeworks
+  // Biblical Hebrew layout logic — so ta'amim stack clear of the niqud instead
+  // of colliding with them. See assets/fonts/LICENSE-Culmus.txt.
   const [fontsLoaded, fontError] = useFonts({
-    KeterYG_Regular: require('./assets/fonts/KeterYG-Medium.ttf'),
-    KeterYG_Bold: require('./assets/fonts/KeterYG-Bold.ttf'),
+    TaameyFrank_Regular: require('./assets/fonts/TaameyFrankCLM-Medium.ttf'),
+    TaameyFrank_Bold: require('./assets/fonts/TaameyFrankCLM-Bold.ttf'),
   });
 
   useEffect(() => {
