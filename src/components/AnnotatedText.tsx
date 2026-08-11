@@ -8,6 +8,9 @@ interface AnnotatedTextProps {
   // When provided, only words whose glossary key is in this set are highlighted.
   // The parent uses this to restrict highlighting to the first occurrence across all verses.
   allowedKeys?: Set<string>;
+  // Allows the OS text-selection gesture (long press) on the whole passage.
+  // A short tap on a glossary word still opens its definition.
+  selectable?: boolean;
   onWordPress: (word: string, definition: string) => void;
 }
 
@@ -48,11 +51,17 @@ function tokenize(text: string, allowedKeys?: Set<string>): Token[] {
   return result;
 }
 
-export default function AnnotatedText({ text, style, allowedKeys, onWordPress }: AnnotatedTextProps) {
+export default function AnnotatedText({
+  text,
+  style,
+  allowedKeys,
+  selectable,
+  onWordPress,
+}: AnnotatedTextProps) {
   const tokens = useMemo(() => tokenize(text, allowedKeys), [text, allowedKeys]);
 
   return (
-    <Text style={style}>
+    <Text style={style} selectable={selectable}>
       {tokens.map((token, i) =>
         token.glossaryKey ? (
           <Text

@@ -18,7 +18,19 @@ import { GLOSSARY } from '../data/glossary';
 import { formatAliyotLabel } from '../utils/aliyah';
 import { cancelReminders, requestPermissionAndSchedule, scheduleReminders } from '../services/notifications';
 import { CUSTOM_TRANSLITERATION_ENABLED, PARASHA_TRANSLITERATIONS } from '../data/transliterations';
-import { getLastSeenStreak, isDateRead, markDateRead, markStreakBannerSeen, unmarkDateRead } from '../utils/storage';
+import {
+  getLastSeenStreak,
+  getReadingPosition,
+  getSavedMode,
+  getSavedRite,
+  isDateRead,
+  markDateRead,
+  markStreakBannerSeen,
+  saveMode,
+  saveReadingPosition,
+  saveRite,
+  unmarkDateRead,
+} from '../utils/storage';
 import { refreshWeeklyStreak } from '../utils/tracker';
 
 type DisplayMode = 'bilingual' | 'targum';
@@ -60,6 +72,16 @@ export default function HomeScreen() {
   const copiedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const toastAnim = useRef(new Animated.Value(0)).current;
 
+  // --- Reading position ---------------------------------------------------
+  const scrollRef = useRef<ScrollView>(null);
+  // Offset we still owe the reader for the day now loading. Non-null means a
+  // restore is outstanding, which also suppresses position saves so a stale
+  // offset can't be written onto the incoming day's key.
+  const pendingScrollRef = useRef<number | null>(null);
+  const viewportRef = useRef(0);
+  const shownDateRef = useRef(new Date());
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Animate streak toast in, hold, then fade out.
   useEffect(() => {
     if (!showStreakBanner) return;
@@ -74,13 +96,21 @@ export default function HomeScreen() {
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
-    setMode('bilingual');
     setTargumVerses(null);
     setTargumUnavailable(false);
     const target = new Date();
     target.setDate(target.getDate() + offsetDays);
+    shownDateRef.current = target;
+    // Claim the restore before any content renders, so the ScrollView can't
+    // linger at the outgoing day's offset.
+    pendingScrollRef.current = 0;
     try {
-      const [result, read] = await Promise.all([fetchTodayReading(rite, target), isDateRead(target)]);
+      const [result, read, savedY] = await Promise.all([
+        fetchTodayReading(rite, target),
+        isDateRead(target),
+        getReadingPosition(target),
+      ]);
+      pendingScrollRef.current = savedY;
       setReading(result);
       setIsRead(read);
       // Only manage reminders based on today's reading, not a navigated day.
@@ -110,29 +140,79 @@ export default function HomeScreen() {
     requestPermissionAndSchedule();
   }, []);
 
-  useEffect(() => () => {
-    if (copiedTimer.current) clearTimeout(copiedTimer.current);
+  // Restore the tab and rite the reader last used.
+  useEffect(() => {
+    (async () => {
+      const [savedMode, savedRite] = await Promise.all([getSavedMode(), getSavedRite()]);
+      if (savedMode === 'targum' || savedMode === 'bilingual') setMode(savedMode);
+      if (savedRite === 'ashkenazi' || savedRite === 'sephardi') setRite(savedRite);
+    })();
   }, []);
 
-  const handleModeChange = useCallback(async (newMode: DisplayMode) => {
+  useEffect(() => () => {
+    if (copiedTimer.current) clearTimeout(copiedTimer.current);
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+  }, []);
+
+  // Haftarah has no Onkelos, so it always displays bilingually — without
+  // forcing the reader's saved tab back to English.
+  const effectiveMode: DisplayMode = reading?.isHaftarah ? 'bilingual' : mode;
+
+  const handleModeChange = useCallback((newMode: DisplayMode) => {
     setMode(newMode);
-    if (newMode === 'targum' && !targumVerses && !targumLoading && !targumUnavailable && reading) {
-      setTargumLoading(true);
-      const verses = await fetchTargumVerses(reading.ref);
+    saveMode(newMode);
+  }, []);
+
+  const handleRiteChange = useCallback((newRite: Rite) => {
+    setRite(newRite);
+    saveRite(newRite);
+  }, []);
+
+  // Fetch Onkelos whenever the Aramaic tab is showing and we don't have it —
+  // covers both tapping the tab and carrying the tab across a day change.
+  useEffect(() => {
+    if (effectiveMode !== 'targum' || !reading) return;
+    if (targumVerses || targumLoading || targumUnavailable) return;
+    let cancelled = false;
+    setTargumLoading(true);
+    fetchTargumVerses(reading.ref).then(verses => {
+      if (cancelled) return;
       setTargumLoading(false);
       if (verses) setTargumVerses(verses);
       else setTargumUnavailable(true);
-    }
-  }, [targumVerses, targumLoading, targumUnavailable, reading]);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [effectiveMode, reading, targumVerses, targumLoading, targumUnavailable]);
+
+  // --- Scroll position ----------------------------------------------------
+  const handleScroll = useCallback((y: number) => {
+    if (pendingScrollRef.current !== null) return; // restore still in flight
+    const date = shownDateRef.current;
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => saveReadingPosition(date, y), 400);
+  }, []);
+
+  // Content lays out in stages, so keep re-applying the target until the page
+  // is actually tall enough to honour it. A day shorter than the saved offset
+  // simply lands at the end; the next load replaces the target either way.
+  const handleContentSizeChange = useCallback((_w: number, h: number) => {
+    const target = pendingScrollRef.current;
+    if (target === null || !scrollRef.current) return;
+    const max = Math.max(0, h - viewportRef.current);
+    scrollRef.current.scrollTo({ y: Math.min(target, max), animated: false });
+    if (target <= max) pendingScrollRef.current = null;
+  }, []);
 
   const handleCopyVerse = useCallback(
     async (book: string, verse: Verse, key: string, targumVerse?: Verse) => {
-      await Clipboard.setStringAsync(buildShareText(book, verse, mode, targumVerse));
+      await Clipboard.setStringAsync(buildShareText(book, verse, effectiveMode, targumVerse));
       setCopiedKey(key);
       if (copiedTimer.current) clearTimeout(copiedTimer.current);
       copiedTimer.current = setTimeout(() => setCopiedKey(null), 1500);
     },
-    [mode],
+    [effectiveMode],
   );
 
   const handleToggleRead = async () => {
@@ -274,7 +354,7 @@ export default function HomeScreen() {
               <Pressable
                 key={key}
                 style={[styles.riteBtn, rite === key && styles.riteBtnActive]}
-                onPress={() => setRite(key)}
+                onPress={() => handleRiteChange(key)}
               >
                 <Text style={[styles.riteText, rite === key && styles.riteTextActive]}>
                   {label}
@@ -290,10 +370,10 @@ export default function HomeScreen() {
         {!reading.isHaftarah && MODES.map(({ key, label }) => (
           <Pressable
             key={key}
-            style={[styles.toggleBtn, mode === key && styles.toggleBtnActive]}
+            style={[styles.toggleBtn, effectiveMode === key && styles.toggleBtnActive]}
             onPress={() => handleModeChange(key)}
           >
-            <Text style={[styles.toggleText, mode === key && styles.toggleTextActive]}>
+            <Text style={[styles.toggleText, effectiveMode === key && styles.toggleTextActive]}>
               {label}
             </Text>
           </Pressable>
@@ -303,14 +383,19 @@ export default function HomeScreen() {
 
       {/* Text Content */}
       <ScrollView
+        ref={scrollRef}
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        scrollEventThrottle={16}
+        onScroll={e => handleScroll(e.nativeEvent.contentOffset.y)}
+        onLayout={e => { viewportRef.current = e.nativeEvent.layout.height; }}
+        onContentSizeChange={handleContentSizeChange}
       >
-        {mode === 'targum' && targumLoading && (
+        {effectiveMode === 'targum' && targumLoading && (
           <ActivityIndicator color={BROWN} style={{ marginBottom: 16 }} />
         )}
-        {mode === 'targum' && targumUnavailable && (
+        {effectiveMode === 'targum' && targumUnavailable && (
           <Text style={styles.targumNote}>
             Targum Onkelos is not available for this reading.
           </Text>
@@ -323,17 +408,18 @@ export default function HomeScreen() {
                 <Text style={styles.verseNumber}>{i + 1}</Text>
                 <Text style={styles.verseRef}>{verse.ref}</Text>
               </View>
-              <Text style={styles.hebrewText}>{verse.he}</Text>
-              {mode === 'bilingual' && (
+              <Text style={styles.hebrewText} selectable>{verse.he}</Text>
+              {effectiveMode === 'bilingual' && (
                 <AnnotatedText
                   text={verse.en}
                   style={styles.englishText}
                   allowedKeys={verseGlossaryKeys[i]}
+                  selectable
                   onWordPress={(word, definition) => setGlossaryWord({ word, definition })}
                 />
               )}
-              {mode === 'targum' && targumVerse && (
-                <Text style={styles.targumText}>{targumVerse.he}</Text>
+              {effectiveMode === 'targum' && targumVerse && (
+                <Text style={styles.targumText} selectable>{targumVerse.he}</Text>
               )}
               <View style={styles.copyRow}>
                 <TouchableOpacity
@@ -475,9 +561,9 @@ const styles = StyleSheet.create({
     textDecorationLine: 'underline',
   },
   parashaHe: {
-    fontSize: 28,
+    fontSize: 30,
     color: '#FDF6E3',
-    fontFamily: 'NotoSerifHebrew_700Bold',
+    fontFamily: 'KeterYG_Bold',
     marginBottom: 0,
   },
   parashaEn: {
@@ -501,10 +587,10 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   refLabel: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#C4A882',
     marginTop: 2,
-    fontFamily: 'NotoSerifHebrew_400Regular',
+    fontFamily: 'KeterYG_Regular',
   },
   refLabelEn: {
     fontSize: 12,
@@ -611,9 +697,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   hebrewText: {
-    fontFamily: 'NotoSerifHebrew_400Regular',
-    fontSize: 22,
-    lineHeight: 38,
+    fontFamily: 'KeterYG_Regular',
+    // Keter YG sets its letters ~9% smaller per em than Noto did, so 24 here
+    // matches the old 22 optically. Its ink spans 1.286em once ta'amim stack
+    // below the niqud, i.e. 30.9px at this size — 44 keeps a clear 13px gutter
+    // between lines so accents never touch the row above.
+    fontSize: 24,
+    lineHeight: 44,
     color: DARK,
     textAlign: 'right',
     writingDirection: 'rtl',
@@ -628,9 +718,9 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
   targumText: {
-    fontFamily: 'NotoSerifHebrew_400Regular',
-    fontSize: 19,
-    lineHeight: 34,
+    fontFamily: 'KeterYG_Regular',
+    fontSize: 21,
+    lineHeight: 38,
     color: '#5C3D1E',
     textAlign: 'right',
     writingDirection: 'rtl',
