@@ -7,7 +7,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -69,18 +68,27 @@ export default function HomeScreen() {
   const [streak, setStreak] = useState(0);
   const [showStreakBanner, setShowStreakBanner] = useState(false);
   const [glossaryWord, setGlossaryWord] = useState<{ word: string; definition: string } | null>(null);
-  const [selectionOpen, setSelectionOpen] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const copiedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const toastAnim = useRef(new Animated.Value(0)).current;
 
   // --- Reading position ---------------------------------------------------
+  // A restore is either to a remembered pixel offset (changing day) or to a
+  // verse (changing language tab, where the same verses are still on screen but
+  // at different heights). Non-null means a restore is outstanding, which also
+  // suppresses position saves so a stale offset can't be written onto the
+  // incoming day's key.
+  type PendingScroll = { kind: 'offset'; y: number } | { kind: 'verse'; index: number };
   const scrollRef = useRef<ScrollView>(null);
-  // Offset we still owe the reader for the day now loading. Non-null means a
-  // restore is outstanding, which also suppresses position saves so a stale
-  // offset can't be written onto the incoming day's key.
-  const pendingScrollRef = useRef<number | null>(null);
+  const pendingScrollRef = useRef<PendingScroll | null>(null);
   const viewportRef = useRef(0);
+  const contentHeightRef = useRef(0);
+  const scrollYRef = useRef(0);
+  const verseOffsetsRef = useRef<number[]>([]);
+  // Verse to re-anchor to once Onkelos finishes loading: the first switch to
+  // Aramaic lays out with Hebrew alone, and the verses shift down when the
+  // Aramaic arrives a moment later.
+  const reanchorRef = useRef<number | null>(null);
   const shownDateRef = useRef(new Date());
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -106,19 +114,21 @@ export default function HomeScreen() {
     setTargumUnavailable(false);
     setTargumLoading(false);
     targumReqRef.current = null; // a new day means a new Onkelos passage
+    reanchorRef.current = null;
     const target = new Date();
     target.setDate(target.getDate() + offsetDays);
     shownDateRef.current = target;
     // Claim the restore before any content renders, so the ScrollView can't
     // linger at the outgoing day's offset.
-    pendingScrollRef.current = 0;
+    pendingScrollRef.current = { kind: 'offset', y: 0 };
+    verseOffsetsRef.current = [];
     try {
       const [result, read, savedY] = await Promise.all([
         fetchTodayReading(rite, target),
         isDateRead(target),
         getReadingPosition(target),
       ]);
-      pendingScrollRef.current = savedY;
+      pendingScrollRef.current = { kind: 'offset', y: savedY };
       setReading(result);
       setIsRead(read);
       // Only manage reminders based on today's reading, not a navigated day.
@@ -166,10 +176,43 @@ export default function HomeScreen() {
   // forcing the reader's saved tab back to English.
   const effectiveMode: DisplayMode = reading?.isHaftarah ? 'bilingual' : mode;
 
-  const handleModeChange = useCallback((newMode: DisplayMode) => {
-    setMode(newMode);
-    saveMode(newMode);
+  // The verse currently at the top of the viewport — the anchor we hold on to
+  // when the text under it is about to be replaced.
+  const topVerseIndex = useCallback(() => {
+    const offsets = verseOffsetsRef.current;
+    let index = 0;
+    for (let i = 0; i < offsets.length; i++) {
+      if (offsets[i] === undefined) break;
+      if (offsets[i] > scrollYRef.current + 1) break;
+      index = i;
+    }
+    return index;
   }, []);
+
+  // Switching tabs swaps the text under the reader, and the English and the
+  // Aramaic are different heights — so hold the verse rather than the pixel
+  // offset, and land back on the same verse in the other language.
+  const handleModeChange = useCallback(
+    (newMode: DisplayMode) => {
+      if (newMode === mode) return;
+      const index = topVerseIndex();
+      pendingScrollRef.current = { kind: 'verse', index };
+      verseOffsetsRef.current = []; // every offset is about to change
+      // If the Aramaic still has to be fetched, hold the anchor until it lands.
+      reanchorRef.current = newMode === 'targum' && !targumVerses ? index : null;
+      setMode(newMode);
+      saveMode(newMode);
+    },
+    [mode, targumVerses, topVerseIndex],
+  );
+
+  // Onkelos arrived and pushed every verse down — go back to the anchor.
+  useEffect(() => {
+    if (!targumVerses || reanchorRef.current === null) return;
+    pendingScrollRef.current = { kind: 'verse', index: reanchorRef.current };
+    verseOffsetsRef.current = [];
+    reanchorRef.current = null;
+  }, [targumVerses]);
 
   const handleRiteChange = useCallback((newRite: Rite) => {
     setRite(newRite);
@@ -207,7 +250,10 @@ export default function HomeScreen() {
 
   // --- Scroll position ----------------------------------------------------
   const handleScroll = useCallback((y: number) => {
+    scrollYRef.current = y;
     if (pendingScrollRef.current !== null) return; // restore still in flight
+    // A deliberate scroll wins over a queued re-anchor.
+    reanchorRef.current = null;
     const date = shownDateRef.current;
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => saveReadingPosition(date, y), 400);
@@ -216,13 +262,38 @@ export default function HomeScreen() {
   // Content lays out in stages, so keep re-applying the target until the page
   // is actually tall enough to honour it. A day shorter than the saved offset
   // simply lands at the end; the next load replaces the target either way.
-  const handleContentSizeChange = useCallback((_w: number, h: number) => {
-    const target = pendingScrollRef.current;
-    if (target === null || !scrollRef.current) return;
-    const max = Math.max(0, h - viewportRef.current);
+  const applyPendingScroll = useCallback(() => {
+    const pending = pendingScrollRef.current;
+    if (pending === null || !scrollRef.current) return;
+    let target: number;
+    if (pending.kind === 'offset') {
+      target = pending.y;
+    } else {
+      const y = verseOffsetsRef.current[pending.index];
+      if (y === undefined) return; // that verse hasn't been laid out yet
+      target = y;
+    }
+    const max = Math.max(0, contentHeightRef.current - viewportRef.current);
     scrollRef.current.scrollTo({ y: Math.min(target, max), animated: false });
     if (target <= max) pendingScrollRef.current = null;
   }, []);
+
+  const handleContentSizeChange = useCallback(
+    (_w: number, h: number) => {
+      contentHeightRef.current = h;
+      applyPendingScroll();
+    },
+    [applyPendingScroll],
+  );
+
+  // Each verse reports where it sits so we can anchor to it later.
+  const handleVerseLayout = useCallback(
+    (index: number, y: number) => {
+      verseOffsetsRef.current[index] = y;
+      if (pendingScrollRef.current?.kind === 'verse') applyPendingScroll();
+    },
+    [applyPendingScroll],
+  );
 
   const handleCopyVerse = useCallback(
     async (book: string, verse: Verse, key: string, targumVerse?: Verse) => {
@@ -352,16 +423,6 @@ export default function HomeScreen() {
   const readingMinutes = Math.max(1, Math.round(totalWords / 200));
   const sectionLabel = reading.isHaftarah ? 'Haftarah' : formatAliyotLabel(reading.aliyot);
 
-  // Whatever is on screen for this day, as one string, so a selection can run
-  // across verses instead of stopping at each one.
-  const selectionBody = reading.verses
-    .map((verse, i) => {
-      const lines = [`${reading.book} ${verse.ref}`, verse.he];
-      if (effectiveMode === 'bilingual' && verse.en) lines.push(verse.en);
-      if (effectiveMode === 'targum' && targumVerses?.[i]?.he) lines.push(targumVerses[i].he);
-      return lines.filter(Boolean).join('\n');
-    })
-    .join('\n\n');
 
   return (
     <View style={styles.container}>
@@ -409,14 +470,6 @@ export default function HomeScreen() {
           </Pressable>
         ))}
         <Text style={styles.readingTime}>~{readingMinutes} min</Text>
-        <Pressable
-          onPress={() => setSelectionOpen(true)}
-          hitSlop={8}
-          style={styles.selectBtn}
-          accessibilityLabel="Select and copy text"
-        >
-          <Text style={styles.selectBtnText}>Select</Text>
-        </Pressable>
       </View>
 
       {/* Text Content */}
@@ -441,7 +494,11 @@ export default function HomeScreen() {
         {reading.verses.map((verse, i) => {
           const targumVerse = targumVerses?.[i];
           return (
-            <View key={i} style={styles.verseBlock}>
+            <View
+              key={i}
+              style={styles.verseBlock}
+              onLayout={e => handleVerseLayout(i, e.nativeEvent.layout.y)}
+            >
               <View style={styles.verseNumberRow}>
                 <Text style={styles.verseNumber}>{i + 1}</Text>
                 <Text style={styles.verseRef}>{verse.ref}</Text>
@@ -474,33 +531,6 @@ export default function HomeScreen() {
           );
         })}
       </ScrollView>
-
-      {/* Free selection sheet.
-          A scrolling TextInput has a fixed frame, so unlike an auto-sizing one
-          it needs no intrinsic measurement and cannot clip the passage. This is
-          also the only place you can drag a selection across several verses. */}
-      <Modal
-        visible={selectionOpen}
-        animationType="slide"
-        onRequestClose={() => setSelectionOpen(false)}
-      >
-        <View style={styles.sheet}>
-          <View style={styles.sheetHeader}>
-            <Text style={styles.sheetTitle}>{reading.ref}</Text>
-            <Pressable onPress={() => setSelectionOpen(false)} hitSlop={12}>
-              <Text style={styles.sheetDone}>Done</Text>
-            </Pressable>
-          </View>
-          <Text style={styles.sheetHint}>Press and hold to select, then drag the handles.</Text>
-          <TextInput
-            style={styles.sheetBody}
-            value={selectionBody}
-            editable={false}
-            multiline
-            scrollEnabled
-          />
-        </View>
-      </Modal>
 
       {/* Glossary Popup */}
       <Modal
@@ -831,60 +861,6 @@ const styles = StyleSheet.create({
     color: MID,
     alignSelf: 'center',
     marginLeft: 4,
-  },
-  selectBtn: {
-    alignSelf: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#D8C4A4',
-  },
-  selectBtnText: {
-    fontSize: 12,
-    color: BROWN,
-    fontWeight: '600',
-    letterSpacing: 0.2,
-  },
-  sheet: {
-    flex: 1,
-    backgroundColor: PARCHMENT,
-    paddingTop: 60,
-  },
-  sheetHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingBottom: 8,
-  },
-  sheetTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: DARK,
-    flexShrink: 1,
-  },
-  sheetDone: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: BROWN,
-  },
-  sheetHint: {
-    fontSize: 12,
-    color: MID,
-    paddingHorizontal: 20,
-    paddingBottom: 10,
-  },
-  sheetBody: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingBottom: 24,
-    fontFamily: 'TaameyFrank_Regular',
-    fontSize: 20,
-    lineHeight: 36,
-    color: DARK,
-    textAlign: 'auto',
-    writingDirection: 'auto',
   },
   shabbatText: {
     fontSize: 17,

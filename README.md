@@ -31,15 +31,24 @@ of colliding with them. Measured over all five books, it collides on 0.0% of
 multi-mark clusters (21 of 59,368) against 12.9% for Noto Serif Hebrew.
 Licence: `assets/fonts/LICENSE-Culmus.txt`.
 
-## Text selection
+## Copying, and why verses are plain `Text`
 
-Passages render as read-only `TextInput`s rather than `Text`, because
-`<Text selectable>` on current iOS shows a copy menu without a real selection
-(facebook/react-native#54686, #55187). A multiline `TextInput` with
-`editable={false}` is a genuine `UITextView`, so press-and-hold, drag handles
-and Look Up all behave normally. The cost is that nested press handlers do not
-fire inside a `TextInput`, so a definition opens when the selection lands on a
-single highlighted word — the same gesture iOS already uses to select a word.
+Copying is the per-verse button, deliberately. Rendering verses as read-only
+`TextInput`s to get drag-selection was tried and reverted: RN measures an
+auto-sizing multiline `TextInput` with Yoga while `UITextView` lays the text
+out itself, and the two disagree once a custom `lineHeight` is involved, so the
+last line of every verse — the closing words and the sof pasuq — was clipped.
+`Text` measures correctly, and it is also the only way a tap on a highlighted
+word can open its definition, since press handlers don't fire inside a
+`TextInput`.
+
+## Reading position
+
+The app resumes rather than resetting. Scroll offset is remembered per calendar
+date, so returning to a day lands where you left it. Switching between the
+English and Aramaic tabs anchors on the *verse* instead of the pixel offset,
+because the two languages set to different heights — including a re-anchor once
+Onkelos arrives over the network and pushes the verses down.
 
 ## Tech Stack
 

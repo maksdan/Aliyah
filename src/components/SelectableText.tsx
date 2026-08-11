@@ -76,14 +76,14 @@ export default function SelectableText({
 
   if (!tokens) {
     return (
-      <Text style={style} selectable>
+      <Text style={style}>
         {text}
       </Text>
     );
   }
 
   return (
-    <Text style={style} selectable>
+    <Text style={style}>
       {tokens.map((token, i) =>
         token.glossaryKey ? (
           <Text
