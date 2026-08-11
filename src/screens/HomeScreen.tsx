@@ -861,10 +861,10 @@ const styles = StyleSheet.create({
     // Frank-Ruehl runs small per em (letter height 0.552em vs Noto's 0.647), so
     // 26 here matches the original 22 optically. Its ink spans 1.221em once
     // ta'amim stack below the niqud — 31.7px at this size — which is the hard
-    // floor for lineHeight: below it accents reach the row above. 42 keeps a
-    // ~10px gutter, tight but clear.
+    // floor for lineHeight: below it accents reach the row above. 39 keeps a
+    // ~7px gutter, tight but clear.
     fontSize: 26,
-    lineHeight: 42,
+    lineHeight: 39,
     color: DARK,
     textAlign: 'right',
     writingDirection: 'rtl',
@@ -882,7 +882,7 @@ const styles = StyleSheet.create({
     fontFamily: 'TaameyFrank_Regular',
     // Same ratio as the Hebrew above; ink spans 26.9px at this size.
     fontSize: 22,
-    lineHeight: 36,
+    lineHeight: 33,
     color: '#5C3D1E',
     textAlign: 'right',
     writingDirection: 'rtl',
