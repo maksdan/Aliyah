@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
+  AppState,
   Linking,
   Modal,
   PanResponder,
@@ -14,11 +15,12 @@ import {
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import SelectableText, { glossaryKeysIn } from '../components/SelectableText';
-import { DayReading, Verse, fetchTargumVerses, fetchTodayReading } from '../services/sefaria';
+import { DayReading, Verse, fetchTargumForReading, fetchTodayReading } from '../services/sefaria';
+import { getDarkDay } from '../services/planner';
+import type { DarkDay } from '../services/planner';
 import { Rite, SEPHARDI_HAFTARAH } from '../data/schedule';
-import { formatAliyotLabel } from '../utils/aliyah';
 import { splitAtEtnachta } from '../utils/phrasing';
-import { cancelReminders, requestPermissionAndSchedule, scheduleReminders } from '../services/notifications';
+import { refreshReminders, requestPermissionAndSchedule } from '../services/notifications';
 import { CUSTOM_TRANSLITERATION_ENABLED, PARASHA_TRANSLITERATIONS } from '../data/transliterations';
 import {
   getLastSeenStreak,
@@ -166,6 +168,33 @@ function sefariaUrl(book: string, ref: string): string {
   return `https://www.sefaria.org/${book.trim().replace(/\s+/g, '_')}.${ref.replace(':', '.')}`;
 }
 
+// Consecutive items sharing a key, in order, as [key, labels] pairs.
+function groupBy(
+  segments: { nameEn: string; sectionLabel: string }[],
+  key: (s: { nameEn: string }) => string,
+): [string, string[]][] {
+  const out: [string, string[]][] = [];
+  for (const seg of segments) {
+    const last = out[out.length - 1];
+    if (last && last[0] === key(seg)) last[1].push(seg.sectionLabel);
+    else out.push([key(seg), [seg.sectionLabel]]);
+  }
+  return out;
+}
+
+// ["Aliyah 6", "Haftarah"] -> "Aliyah 6 and Haftarah"
+function joinPhrase(parts: string[]): string {
+  if (parts.length <= 1) return parts[0] ?? '';
+  return `${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]}`;
+}
+
+// "Read on Shabbat" / "Read Thu, Sep 24" — when this chunk will be leined.
+function describeLeined(iso: string): string {
+  const d = new Date(iso);
+  if (d.getDay() === 6) return 'Read on Shabbat';
+  return `Read ${d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}`;
+}
+
 function buildShareText(book: string, verse: Verse, mode: DisplayMode, targumVerse?: Verse): string {
   const source = `${book} ${verse.ref}`.trim();
   const lines: string[] = [];
@@ -177,11 +206,12 @@ function buildShareText(book: string, verse: Verse, mode: DisplayMode, targumVer
 
 export default function HomeScreen() {
   const [reading, setReading] = useState<DayReading | null>(null);
+  const [darkDay, setDarkDay] = useState<DarkDay | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [offsetDays, setOffsetDays] = useState(0);
   const [mode, setMode] = useState<DisplayMode>('bilingual');
-  const [targumVerses, setTargumVerses] = useState<Verse[] | null>(null);
+  const [targumVerses, setTargumVerses] = useState<(Verse | null)[] | null>(null);
   const [targumLoading, setTargumLoading] = useState(false);
   const [targumUnavailable, setTargumUnavailable] = useState(false);
   const [rite, setRite] = useState<Rite>('ashkenazi');
@@ -264,6 +294,7 @@ export default function HomeScreen() {
     const target = new Date();
     target.setDate(target.getDate() + offsetDays);
     shownDateRef.current = target;
+    setDarkDay(getDarkDay(target));
     // Claim the restore before any content renders, so the ScrollView can't
     // linger at the outgoing day's offset.
     claimRestore({ kind: 'offset', y: 0 });
@@ -277,11 +308,6 @@ export default function HomeScreen() {
       claimRestore({ kind: 'offset', y: savedY });
       setReading(result);
       setIsRead(read);
-      // Only manage reminders based on today's reading, not a navigated day.
-      if (offsetDays === 0) {
-        if (result === null || read) cancelReminders();
-        else scheduleReminders();
-      }
       const newStreak = await refreshWeeklyStreak();
       setStreak(newStreak);
       const lastSeen = await getLastSeenStreak();
@@ -302,6 +328,13 @@ export default function HomeScreen() {
 
   useEffect(() => {
     requestPermissionAndSchedule();
+    const sub = AppState.addEventListener('change', (state) => {
+      // The window is a fortnight of dated reminders, so returning to the app
+      // after time away is exactly when it needs rebuilding — mount alone would
+      // not fire for a phone that is only ever backgrounded.
+      if (state === 'active') refreshReminders();
+    });
+    return () => sub.remove();
   }, []);
 
   // Restore the tab and rite the reader last used.
@@ -384,7 +417,7 @@ export default function HomeScreen() {
     if (targumReqRef.current === ref) return; // already asked for this passage
     targumReqRef.current = ref;
     setTargumLoading(true);
-    fetchTargumVerses(ref)
+    fetchTargumForReading(reading)
       .then(verses => {
         if (shownRefRef.current !== ref) return; // stale — the day moved on
         if (verses) setTargumVerses(verses);
@@ -410,7 +443,7 @@ export default function HomeScreen() {
     target.setDate(target.getDate() + offsetDays);
     await markDateRead(target);
     setIsRead(true);
-    if (offsetDays === 0) cancelReminders();
+    refreshReminders();
     // The button swells and settles. Short enough to register as acknowledgement
     // rather than as something to wait through.
     readPop.setValue(0);
@@ -430,7 +463,7 @@ export default function HomeScreen() {
     target.setDate(target.getDate() + offsetDays);
     await unmarkDateRead(target);
     setIsRead(false);
-    if (offsetDays === 0) scheduleReminders();
+    refreshReminders();
     await refreshStreak();
   };
 
@@ -649,16 +682,27 @@ export default function HomeScreen() {
   );
 
   if (!reading) {
+    // Dark day: the leining happens today — Shabbat or yom tov — so there is
+    // nothing to prepare and the app rests with the reader.
+    const chag = darkDay && !darkDay.isShabbat ? darkDay : null;
     return (
       <View style={styles.container}>
         <View style={styles.header}>
           {navRow}
-          <Text style={styles.parashaHe}>שבת שלום</Text>
-          <Text style={styles.parashaEn}>Shabbat Shalom</Text>
-          <Text style={styles.aliyahLabel}>No reading on Shabbat</Text>
+          <Text style={styles.parashaHe} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>
+            {chag ? chag.nameHe : 'שבת שלום'}
+          </Text>
+          <Text style={styles.parashaEn} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>
+            {chag ? chag.nameEn : 'Shabbat Shalom'}
+          </Text>
+          <Text style={styles.aliyahLabel}>
+            {chag ? 'No reading today — Chag Sameach!' : 'No reading on Shabbat'}
+          </Text>
         </View>
         <View style={styles.center}>
-          <Text style={styles.shabbatText}>Rest and recharge.</Text>
+          <Text style={styles.shabbatText}>
+            {chag ? 'The reading was prepared before the chag.' : 'Rest and recharge.'}
+          </Text>
         </View>
       </View>
     );
@@ -669,7 +713,15 @@ export default function HomeScreen() {
     0,
   );
   const readingMinutes = Math.max(1, Math.round(totalWords / 200));
-  const sectionLabel = reading.isHaftarah ? 'Haftarah' : formatAliyotLabel(reading.aliyot);
+  // One leining's portions read as one phrase — "Yom Kippur: Aliyah 6 and
+  // Haftarah" — rather than repeating its name for each segment. Different
+  // leinings stay separated by the dot.
+  const sectionLabel =
+    reading.segments.length > 1
+      ? groupBy(reading.segments, (s) => s.nameEn)
+          .map(([name, labels]) => `${name}: ${joinPhrase(labels)}`)
+          .join('  ·  ')
+      : reading.segments[0].sectionLabel;
 
 
   return (
@@ -677,8 +729,14 @@ export default function HomeScreen() {
       {/* Header */}
       <View style={styles.header}>
         {navRow}
-        <Text style={styles.parashaHe}>{reading.parashaHe}</Text>
-        <Text style={styles.parashaEn}>Parshat {CUSTOM_TRANSLITERATION_ENABLED ? (PARASHA_TRANSLITERATIONS[reading.parashaEn] ?? reading.parashaEn) : reading.parashaEn}</Text>
+        <Text style={styles.parashaHe} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>
+          {reading.parashaHe}
+        </Text>
+        {/* A chag is named as itself: "Parshat Rosh Hashana I" is not a thing. */}
+        <Text style={styles.parashaEn} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>
+          {reading.isHoliday ? '' : 'Parshat '}
+          {CUSTOM_TRANSLITERATION_ENABLED ? (PARASHA_TRANSLITERATIONS[reading.parashaEn] ?? reading.parashaEn) : reading.parashaEn}
+        </Text>
         <Text style={styles.aliyahLabel}>
           {sectionLabel}
         </Text>
@@ -743,7 +801,12 @@ export default function HomeScreen() {
           </Text>
         )}
         {reading.verses.map((verse, i) => {
-          const targumVerse = targumVerses?.[i];
+          const targumVerse = targumVerses?.[i] ?? undefined;
+          const segIndex = reading.segmentOfVerse[i];
+          const segment = reading.segments[segIndex];
+          const segmentStarts = i === 0 || reading.segmentOfVerse[i - 1] !== segIndex;
+          // Verse numbers restart with each segment, matching its refs.
+          const verseNum = i - reading.segmentOfVerse.indexOf(segIndex) + 1;
           return (
             <View
               key={i}
@@ -758,19 +821,31 @@ export default function HomeScreen() {
               ]}
               onAccessibilityAction={e => {
                 if (e.nativeEvent.actionName === 'copy') {
-                  handleCopyVerse(reading.book, verse, `${i}`, targumVerse);
+                  handleCopyVerse(segment.book, verse, `${i}`, targumVerse);
                 } else if (e.nativeEvent.actionName === 'sefaria') {
-                  handleOpenSefaria(reading.book, verse);
+                  handleOpenSefaria(segment.book, verse);
                 }
               }}
             >
+              {/* Multi-reading days label each portion with what it is and when
+                  it's leined, so a borrowed chunk explains itself. */}
+              {segmentStarts && reading.segments.length > 1 && (
+                <View style={styles.segmentHeader}>
+                  <Text style={styles.segmentTitle}>
+                    {segment.isHoliday ? segment.nameEn : `Parshat ${segment.nameEn}`}
+                    {' — '}
+                    {segment.sectionLabel}
+                  </Text>
+                  <Text style={styles.segmentFor}>{describeLeined(segment.leinedOn)}</Text>
+                </View>
+              )}
               <VerseSwipe
                 copied={copiedKey === `${i}`}
-                onCopy={() => handleCopyVerse(reading.book, verse, `${i}`, targumVerse)}
-                onOpen={() => handleOpenSefaria(reading.book, verse)}
+                onCopy={() => handleCopyVerse(segment.book, verse, `${i}`, targumVerse)}
+                onOpen={() => handleOpenSefaria(segment.book, verse)}
               >
                 <View style={styles.verseNumberRow}>
-                  <Text style={styles.verseNumber}>{i + 1}</Text>
+                  <Text style={styles.verseNumber}>{verseNum}</Text>
                   <View style={styles.verseRefRow}>
                     {copiedKey === `${i}` && <Text style={styles.copiedFlag}>copied</Text>}
                     <Text style={styles.verseRef}>{verse.ref}</Text>
@@ -931,6 +1006,7 @@ const styles = StyleSheet.create({
     color: '#D4B896',
     letterSpacing: 0.5,
     textTransform: 'uppercase',
+    textAlign: 'center',
   },
   navLabelTappable: {
     color: '#F5DEB3',
@@ -941,12 +1017,16 @@ const styles = StyleSheet.create({
     color: '#FDF6E3',
     fontFamily: 'TaameyFrank_Bold',
     marginBottom: 0,
+    textAlign: 'center',
+    alignSelf: 'stretch',
   },
   parashaEn: {
     fontSize: 18,
     color: '#F5DEB3',
     fontWeight: '600',
     letterSpacing: 0.3,
+    textAlign: 'center',
+    alignSelf: 'stretch',
   },
   aliyahLabel: {
     fontSize: 15,
@@ -954,18 +1034,24 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginTop: 6,
     letterSpacing: 0.2,
+    textAlign: 'center',
+    alignSelf: 'stretch',
   },
   refLabel: {
     fontSize: 14,
     color: '#C4A882',
     marginTop: 2,
     fontFamily: 'TaameyFrank_Regular',
+    textAlign: 'center',
+    alignSelf: 'stretch',
   },
   refLabelEn: {
     fontSize: 12,
     color: '#C4A882',
     marginTop: 1,
     letterSpacing: 0.2,
+    textAlign: 'center',
+    alignSelf: 'stretch',
   },
   riteRow: {
     flexDirection: 'row',
@@ -1066,6 +1152,27 @@ const styles = StyleSheet.create({
   },
   swipeHintEnd: {
     textAlign: 'right',
+  },
+  // Portion header inside a multi-reading day.
+  segmentHeader: {
+    marginTop: 10,
+    marginBottom: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    backgroundColor: '#F5EDD8',
+    borderRadius: 6,
+    borderLeftWidth: 3,
+    borderLeftColor: BROWN,
+  },
+  segmentTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: BROWN,
+  },
+  segmentFor: {
+    fontSize: 11,
+    color: MID,
+    marginTop: 1,
   },
   attribution: {
     fontSize: 12,

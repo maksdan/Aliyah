@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getDarkDay } from '../services/planner';
 import { cancelWeeklyCongrats, scheduleWeeklyCongrats } from '../services/notifications';
 
 const STREAK_KEY = 'weekly_streak';
@@ -26,13 +27,17 @@ function readKeyForDate(d: Date): string {
 }
 
 // A week is complete when every Sunday–Friday reading day is marked read.
+// A yom tov weekday is dark — there is nothing to read and no way to mark it —
+// so it counts as satisfied on its own, or a chag week would end every streak.
 async function isWeekComplete(sunday: Date): Promise<boolean> {
-  const keys = READING_DAY_OFFSETS.map((offset) => {
+  const days = READING_DAY_OFFSETS.map((offset) => {
     const d = new Date(sunday);
     d.setDate(d.getDate() + offset);
-    return readKeyForDate(d);
+    return d;
   });
-  const entries = await AsyncStorage.multiGet(keys);
+  const open = days.filter((d) => !getDarkDay(d));
+  if (open.length === 0) return true; // a week swallowed whole by chag
+  const entries = await AsyncStorage.multiGet(open.map(readKeyForDate));
   return entries.every(([, v]) => v === '1');
 }
 

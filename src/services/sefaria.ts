@@ -1,11 +1,9 @@
-import { HDate, Sedra } from '@hebcal/core';
 import { transliterateNouns } from '../data/transliterations';
-import {
-  Rite,
-  getHaftarahRef,
-  getParashaSchedule,
-  isHaftarahDay,
-} from '../data/schedule';
+import type { PlannedSegment } from './planner';
+import { planDay } from './planner';
+import { DAY_NAMES_EN, formatAliyotLabel } from '../utils/aliyah';
+import type { Rite } from '../data/schedule';
+import { getHaftarahRef } from '../data/schedule';
 
 const BASE = 'https://www.sefaria.org/api';
 
@@ -15,18 +13,38 @@ export interface Verse {
   ref: string;
 }
 
-// One day's reading: either a group of aliyot (Sun–Thu) or the Friday Haftarah.
+// One portion of a day: a run of aliyot or a haftarah, belonging to one
+// leining. A plain day has exactly one; a chag-season day may carry several
+// ("Nitzavim — Haftarah" then "Rosh Hashana I — Aliyah 1").
+export interface ReadingSegment {
+  nameEn: string;
+  nameHe: string;
+  isHoliday: boolean;
+  sectionLabel: string; // "Aliyot 2 & 3", "Haftarah", "Maftir"
+  leinedOn: string; // ISO date of the leining this prepares
+  isHaftarah: boolean;
+  ref: string;
+  heRef: string;
+  book: string;
+  verses: Verse[];
+}
+
+// One day's preparation: the ordered segments, plus flattened views the screen
+// renders from. On a plain week this is exactly the old single reading.
 export interface DayReading {
   parashaEn: string;
   parashaHe: string;
   day: string; // 'Sunday' … 'Friday'
-  isHaftarah: boolean;
+  isHaftarah: boolean; // the whole day is haftarah (plain Friday)
   aliyot: (number | string)[];
   rite?: Rite; // set only for Haftarah days
   ref: string; // combined English ref shown to the user
   heRef: string;
   book: string;
-  verses: Verse[];
+  verses: Verse[]; // all segments' verses, flattened in order
+  segments: ReadingSegment[];
+  segmentOfVerse: number[]; // flat verse index -> segment index
+  isHoliday?: boolean; // first segment is a chag's reading
 }
 
 interface TextResponse {
@@ -219,58 +237,105 @@ const PARASHA_HEBREW_NAMES: Record<string, string> = {
   'Vzot Haberakhah': 'וְזֹאת הַבְּרָכָה',
 };
 
-// Derives the weekly parasha from the local Hebrew calendar (no network call).
-// Combined parashiot (e.g. Matot+Masei) are joined with "-" to match schedule.json keys.
-function getParashaFromDate(date: Date): { en: string; he: string } {
-  const hd = new HDate(date);
-  const sedra = new Sedra(hd.getFullYear(), false); // false = diaspora
-  const result = sedra.lookup(hd);
-  const parts: string[] = result.parsha;
-  const en = parts.join('-');
-  const he = parts.map((p) => PARASHA_HEBREW_NAMES[p] ?? p).join('-');
-  return { en, he };
+// The Hebrew of a parasha name, combined weeks included: the map holds the
+// single names, so "Nitzavim-Vayeilech" resolves part by part — trying the
+// whole key first, because "Lech-Lecha" is a single parasha with a hyphen of
+// its own.
+function parashaHebrewName(key: string): string | undefined {
+  if (PARASHA_HEBREW_NAMES[key]) return PARASHA_HEBREW_NAMES[key];
+  const parts = key.split('-');
+  if (parts.length > 1 && parts.every((p) => PARASHA_HEBREW_NAMES[p])) {
+    return parts.map((p) => PARASHA_HEBREW_NAMES[p]).join('-');
+  }
+  return undefined;
 }
 
 // Fetch Targum Onkelos for a Torah ref. Returns null for haftarah (multi-part
 // refs with ";") or when Onkelos isn't available for the passage.
 export async function fetchTargumVerses(ref: string): Promise<Verse[] | null> {
-  if (ref.includes(';')) return null; // haftarah — no Onkelos
+  // Multi-part refs used to be rejected outright as haftarot, which they were
+  // until the holiday readings arrived: a chag's Torah portion is routinely
+  // "Genesis 22:1-24; Numbers 29:1-6", and Onkelos covers both halves. Each
+  // part is asked for separately, and a part Onkelos does not cover — anything
+  // outside the Torah, a haftarah above all — fails the whole request, which is
+  // the same answer as before for those.
   try {
-    const { verses } = await fetchOneRef(`Onkelos ${ref}`);
+    const parts = ref.split(/;\s*/).filter(Boolean);
+    const results = await Promise.all(parts.map((p) => fetchOneRef(`Onkelos ${p}`)));
+    const verses = results.flatMap((r) => r.verses);
     return verses.length > 0 ? verses : null;
   } catch {
     return null;
   }
 }
 
-// Fetch today's reading per the static schedule. Returns null on Shabbat (no
-// reading) or when the current parasha isn't in the schedule. `rite` only
-// affects the Friday Haftarah.
+// Assemble the day from the planner: each planned segment fetched and labelled.
+// Returns null on dark days (Shabbat and yom tov — the screen asks the planner
+// directly what to call them). `rite` only affects a plain Friday's haftarah.
 export async function fetchTodayReading(rite: Rite, date: Date = new Date()): Promise<DayReading | null> {
-  const weekday = date.getDay();
-  if (weekday === 6) return null; // Shabbat — no reading
+  const plan = planDay(date);
+  if (plan.kind !== 'prep' || plan.segments.length === 0) return null;
 
-  const parasha = getParashaFromDate(date);
-  const schedule = getParashaSchedule(parasha.en);
-  if (!schedule) throw new Error(`No schedule found for "${parasha.en}"`);
+  const segments = await Promise.all(plan.segments.map((ps) => fetchSegment(ps, rite)));
+  const nonEmpty = segments.filter((s): s is ReadingSegment => s !== null);
+  if (nonEmpty.length === 0) return null;
 
-  const day = schedule.days[weekday];
-  if (!day) return null;
-
-  const haftarah = isHaftarahDay(day);
-  const ref = haftarah ? getHaftarahRef(parasha.en, rite, day.ref) : day.ref;
-  const { verses, heRef, book } = await fetchRef(ref);
+  const first = nonEmpty[0];
+  const verses = nonEmpty.flatMap((s) => s.verses);
+  const segmentOfVerse = nonEmpty.flatMap((s, i) => s.verses.map(() => i));
+  const wholeDayHaftarah = nonEmpty.every((s) => s.isHaftarah);
 
   return {
-    parashaEn: parasha.en,
-    parashaHe: parasha.he,
-    day: day.day,
-    isHaftarah: haftarah,
-    aliyot: day.aliyot,
-    rite: haftarah ? rite : undefined,
+    parashaEn: first.nameEn,
+    parashaHe: first.nameHe,
+    day: DAY_NAMES_EN[date.getDay()],
+    isHaftarah: wholeDayHaftarah,
+    aliyot: plan.segments[0].aliyot,
+    rite: wholeDayHaftarah ? rite : undefined,
+    ref: nonEmpty.map((s) => s.ref).join(' · '),
+    heRef: first.heRef,
+    book: first.book,
+    verses,
+    segments: nonEmpty,
+    segmentOfVerse,
+    isHoliday: first.isHoliday,
+  };
+}
+
+async function fetchSegment(ps: PlannedSegment, rite: Rite): Promise<ReadingSegment | null> {
+  // A plain Friday keeps the Ashkenazi/Sephardi haftarah choice.
+  const ref = ps.pinnedHaftarahDay && ps.parashaKey
+    ? getHaftarahRef(ps.parashaKey, rite, ps.ref)
+    : ps.ref;
+  const { verses, heRef, book } = await fetchRef(ref);
+  if (verses.length === 0) return null;
+  return {
+    nameEn: ps.nameEn,
+    nameHe: ps.isParasha ? parashaHebrewName(ps.nameEn) || ps.nameHe || ps.nameEn : ps.nameHe,
+    isHoliday: !ps.isParasha,
+    sectionLabel: formatAliyotLabel(ps.aliyot),
+    leinedOn: ps.leinedOn,
+    isHaftarah: ps.isHaftarah,
     ref,
     heRef,
     book,
     verses,
   };
+}
+
+// Targum Onkelos for the whole day, aligned to the flat verse index: Torah
+// segments get their verses, haftarah segments get nulls. Null overall when no
+// segment has Onkelos at all.
+export async function fetchTargumForReading(reading: DayReading): Promise<(Verse | null)[] | null> {
+  const per = await Promise.all(
+    reading.segments.map((s) => (s.isHaftarah ? Promise.resolve(null) : fetchTargumVerses(s.ref))),
+  );
+  if (per.every((p) => p === null)) return null;
+  return reading.segments.flatMap((s, i) => {
+    const t = per[i];
+    // Misaligned Onkelos would pair verse i with another verse's Aramaic —
+    // drop the segment instead.
+    if (!t || t.length !== s.verses.length) return s.verses.map(() => null);
+    return t;
+  });
 }
