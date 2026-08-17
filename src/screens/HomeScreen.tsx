@@ -2,7 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
+  Linking,
   Modal,
+  PanResponder,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -78,6 +80,92 @@ function HebrewVerse({ text }: { text: string }) {
   );
 }
 
+// Swipe a verse: right to copy it, left to open it on Sefaria.
+//
+// The gesture is claimed only once the drag is clearly horizontal — twice as
+// much across as down, and past a few pixels — so the vertical scroll it lives
+// inside is never stolen from.
+const SWIPE_TRIGGER = 64; // how far to drag before the action takes
+const SWIPE_MAX = 96;     // how far the row will travel, so the drag has an end
+
+function VerseSwipe({
+  copied,
+  onCopy,
+  onOpen,
+  children,
+}: {
+  copied: boolean;
+  onCopy: () => void;
+  onOpen: () => void;
+  children: React.ReactNode;
+}) {
+  const dx = useRef(new Animated.Value(0)).current;
+  // The responder is built once, so it must not close over stale handlers.
+  const handlers = useRef({ onCopy, onOpen });
+  handlers.current = { onCopy, onOpen };
+
+  const pan = useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponder: (_e, g) =>
+          Math.abs(g.dx) > 8 && Math.abs(g.dx) > Math.abs(g.dy) * 2,
+        onPanResponderMove: (_e, g) =>
+          dx.setValue(Math.max(Math.min(g.dx, SWIPE_MAX), -SWIPE_MAX)),
+        onPanResponderRelease: (_e, g) => {
+          if (g.dx >= SWIPE_TRIGGER) handlers.current.onCopy();
+          else if (g.dx <= -SWIPE_TRIGGER) handlers.current.onOpen();
+          Animated.spring(dx, { toValue: 0, friction: 6, useNativeDriver: true }).start();
+        },
+        onPanResponderTerminate: () => {
+          Animated.spring(dx, { toValue: 0, friction: 6, useNativeDriver: true }).start();
+        },
+      }),
+    [dx],
+  );
+
+  // Each hint is uncovered by the row sliding off it, so each sits on the side
+  // the row moves away from.
+  const copyOpacity = dx.interpolate({
+    inputRange: [0, SWIPE_TRIGGER],
+    outputRange: [0, 1],
+    extrapolate: 'clamp',
+  });
+  const openOpacity = dx.interpolate({
+    inputRange: [-SWIPE_TRIGGER, 0],
+    outputRange: [1, 0],
+    extrapolate: 'clamp',
+  });
+
+  return (
+    <View>
+      <View style={styles.swipeHint} pointerEvents="none">
+        <Animated.Text style={[styles.swipeHintIcon, { opacity: copyOpacity }]}>
+          {copied ? '✓' : '⧉'}
+        </Animated.Text>
+        <Animated.Text
+          style={[styles.swipeHintIcon, styles.swipeHintEnd, { opacity: openOpacity }]}
+        >
+          ↗
+        </Animated.Text>
+      </View>
+      <Animated.View
+        style={[styles.swipeRow, { transform: [{ translateX: dx }] }]}
+        {...pan.panHandlers}
+      >
+        {children}
+      </Animated.View>
+    </View>
+  );
+}
+
+// Sefaria addresses a verse as Book.Chapter.Verse, with underscores for the
+// spaces in a book name ("I Kings 18:46" -> "I_Kings.18.46"). In the Aramaic
+// tab this still opens the pasuq rather than the Onkelos: the verse is what the
+// reader is looking at, and Sefaria shows its translations alongside anyway.
+function sefariaUrl(book: string, ref: string): string {
+  return `https://www.sefaria.org/${book.trim().replace(/\s+/g, '_')}.${ref.replace(':', '.')}`;
+}
+
 function buildShareText(book: string, verse: Verse, mode: DisplayMode, targumVerse?: Verse): string {
   const source = `${book} ${verse.ref}`.trim();
   const lines: string[] = [];
@@ -104,6 +192,11 @@ export default function HomeScreen() {
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const copiedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const toastAnim = useRef(new Animated.Value(0)).current;
+  const readPop = useRef(new Animated.Value(0)).current;
+  // Reaching the end fires once per reading. Without this the check would try to
+  // re-fire on every scroll event while the reader sits at the bottom, and the
+  // isRead state lags the first one by a render.
+  const autoMarkedRef = useRef<string | null>(null);
 
   // --- Reading position ---------------------------------------------------
   // A restore is either to a remembered pixel offset (changing day) or to a
@@ -302,6 +395,68 @@ export default function HomeScreen() {
       });
   }, [effectiveMode, reading]);
 
+  const refreshStreak = useCallback(async () => {
+    const newStreak = await refreshWeeklyStreak();
+    setStreak(newStreak);
+    const lastSeen = await getLastSeenStreak();
+    if (newStreak > 0 && newStreak > lastSeen) {
+      setShowStreakBanner(true);
+      await markStreakBannerSeen(newStreak);
+    }
+  }, []);
+
+  const markRead = useCallback(async () => {
+    const target = new Date();
+    target.setDate(target.getDate() + offsetDays);
+    await markDateRead(target);
+    setIsRead(true);
+    if (offsetDays === 0) cancelReminders();
+    // The button swells and settles. Short enough to register as acknowledgement
+    // rather than as something to wait through.
+    readPop.setValue(0);
+    Animated.sequence([
+      Animated.timing(readPop, { toValue: 1, duration: 180, useNativeDriver: true }),
+      Animated.spring(readPop, { toValue: 0, friction: 4, tension: 90, useNativeDriver: true }),
+    ]).start();
+    await refreshStreak();
+  }, [offsetDays, readPop, refreshStreak]);
+
+  const handleToggleRead = async () => {
+    if (!isRead) {
+      await markRead();
+      return;
+    }
+    const target = new Date();
+    target.setDate(target.getDate() + offsetDays);
+    await unmarkDateRead(target);
+    setIsRead(false);
+    if (offsetDays === 0) scheduleReminders();
+    await refreshStreak();
+  };
+
+  // Reaching the end of the day's text marks it read: arriving at the bottom is
+  // the same claim the button makes, so making the reader also press it is
+  // asking them to say it twice.
+  const maybeAutoMarkRead = useCallback(
+    (y: number) => {
+      if (pendingScrollRef.current !== null) return; // a restore put us here, not the reader
+      const viewport = viewportRef.current;
+      const content = contentHeightRef.current;
+      if (!viewport || !content) return;
+      // A reading that fits on one screen is already "at the bottom" the moment
+      // it renders, and nothing has been read yet. Those keep the button.
+      if (content <= viewport + 24) return;
+      if (y + viewport < content - 24) return;
+      // Once per passage. This also means that un-marking a day and scrolling
+      // again leaves it un-marked, rather than the app arguing with the reader.
+      const key = `${shownDateRef.current.toDateString()}|${shownRefRef.current ?? ''}`;
+      if (autoMarkedRef.current === key || isRead) return;
+      autoMarkedRef.current = key;
+      markRead();
+    },
+    [isRead, markRead],
+  );
+
   // --- Scroll position ----------------------------------------------------
   // A restore must always finish, even when it cannot be honoured. It used to
   // be cleared only on full success, so returning to a day whose aliyah was
@@ -326,8 +481,9 @@ export default function HomeScreen() {
       const date = shownDateRef.current;
       if (saveTimer.current) clearTimeout(saveTimer.current);
       saveTimer.current = setTimeout(() => saveReadingPosition(date, y), 400);
+      maybeAutoMarkRead(y);
     },
-    [],
+    [maybeAutoMarkRead],
   );
 
   // Write the position now rather than waiting out the debounce — used when
@@ -379,6 +535,14 @@ export default function HomeScreen() {
     [applyPendingScroll],
   );
 
+  const handleOpenSefaria = useCallback(async (book: string, verse: Verse) => {
+    const url = sefariaUrl(book, verse.ref);
+    // canOpenURL rather than a bare openURL: on a device with no browser able
+    // to take an https link, openURL rejects and would surface as an unhandled
+    // rejection rather than as nothing happening.
+    if (await Linking.canOpenURL(url)) await Linking.openURL(url);
+  }, []);
+
   const handleCopyVerse = useCallback(
     async (book: string, verse: Verse, key: string, targumVerse?: Verse) => {
       await Clipboard.setStringAsync(buildShareText(book, verse, effectiveMode, targumVerse));
@@ -389,26 +553,6 @@ export default function HomeScreen() {
     [effectiveMode],
   );
 
-  const handleToggleRead = async () => {
-    const target = new Date();
-    target.setDate(target.getDate() + offsetDays);
-    if (isRead) {
-      await unmarkDateRead(target);
-      setIsRead(false);
-      if (offsetDays === 0) scheduleReminders();
-    } else {
-      await markDateRead(target);
-      setIsRead(true);
-      if (offsetDays === 0) cancelReminders();
-    }
-    const newStreak = await refreshWeeklyStreak();
-    setStreak(newStreak);
-    const lastSeen = await getLastSeenStreak();
-    if (newStreak > 0 && newStreak > lastSeen) {
-      setShowStreakBanner(true);
-      await markStreakBannerSeen(newStreak);
-    }
-  };
 
   // Pre-compute which glossary keys appear for the first time in each verse,
   // so SelectableText highlights only the first occurrence across the whole reading.
@@ -450,10 +594,18 @@ export default function HomeScreen() {
 
   const targetDate = new Date();
   targetDate.setDate(targetDate.getDate() + offsetDays);
-  const navLabel = offsetDays === -1 ? 'Yesterday'
-    : offsetDays === 1 ? 'Tomorrow'
-    : offsetDays === 0 ? 'Today'
-    : targetDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  // "Today, Sun Aug 16" — the weekday is built separately rather than asking for
+  // it in one call, because en-US puts its own comma after the weekday and the
+  // label would read "Today, Sun, Aug 16". This is also where the day of the
+  // week now lives: the reading's own day line under the aliyah label was the
+  // same information twice, since the schedule keys the day off this date.
+  const stamp =
+    `${targetDate.toLocaleDateString('en-US', { weekday: 'short' })} ` +
+    `${targetDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+  const navLabel = offsetDays === -1 ? `Yesterday, ${stamp}`
+    : offsetDays === 1 ? `Tomorrow, ${stamp}`
+    : offsetDays === 0 ? `Today, ${stamp}`
+    : stamp;
 
   const navRow = (
     <View style={styles.navRow}>
@@ -530,7 +682,6 @@ export default function HomeScreen() {
         <Text style={styles.aliyahLabel}>
           {sectionLabel}
         </Text>
-        <Text style={styles.dayLabel}>{reading.day}</Text>
         <Text style={styles.refLabel}>{reading.heRef}</Text>
         <Text style={styles.refLabelEn}>{reading.ref}</Text>
 
@@ -598,34 +749,46 @@ export default function HomeScreen() {
               key={i}
               style={styles.verseBlock}
               onLayout={e => handleVerseLayout(i, e.nativeEvent.layout.y)}
+              // The swipe is the only way to copy now, and a swipe is not
+              // available to a reader driving the screen with VoiceOver — so the
+              // same action is published to the accessibility layer.
+              accessibilityActions={[
+                { name: 'copy', label: 'Copy verse' },
+                { name: 'sefaria', label: 'Open on Sefaria' },
+              ]}
+              onAccessibilityAction={e => {
+                if (e.nativeEvent.actionName === 'copy') {
+                  handleCopyVerse(reading.book, verse, `${i}`, targumVerse);
+                } else if (e.nativeEvent.actionName === 'sefaria') {
+                  handleOpenSefaria(reading.book, verse);
+                }
+              }}
             >
-              <View style={styles.verseNumberRow}>
-                <Text style={styles.verseNumber}>{i + 1}</Text>
-                <Text style={styles.verseRef}>{verse.ref}</Text>
-              </View>
-              <HebrewVerse text={verse.he} />
-              {effectiveMode === 'bilingual' && (
-                <SelectableText
-                  text={verse.en}
-                  style={styles.englishText}
-                  allowedKeys={verseGlossaryKeys[i]}
-                  onWordPress={(word, definition) => setGlossaryWord({ word, definition })}
-                />
-              )}
-              {effectiveMode === 'targum' && targumVerse && (
-                <SelectableText text={targumVerse.he} style={styles.targumText} />
-              )}
-              <View style={styles.copyRow}>
-                <TouchableOpacity
-                  onPress={() => handleCopyVerse(reading.book, verse, `${i}`, targumVerse)}
-                  hitSlop={8}
-                  accessibilityLabel="Copy verse"
-                >
-                  <Text style={styles.copyBtn}>
-                    {copiedKey === `${i}` ? '✓' : '⧉'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
+              <VerseSwipe
+                copied={copiedKey === `${i}`}
+                onCopy={() => handleCopyVerse(reading.book, verse, `${i}`, targumVerse)}
+                onOpen={() => handleOpenSefaria(reading.book, verse)}
+              >
+                <View style={styles.verseNumberRow}>
+                  <Text style={styles.verseNumber}>{i + 1}</Text>
+                  <View style={styles.verseRefRow}>
+                    {copiedKey === `${i}` && <Text style={styles.copiedFlag}>copied</Text>}
+                    <Text style={styles.verseRef}>{verse.ref}</Text>
+                  </View>
+                </View>
+                <HebrewVerse text={verse.he} />
+                {effectiveMode === 'bilingual' && (
+                  <SelectableText
+                    text={verse.en}
+                    style={styles.englishText}
+                    allowedKeys={verseGlossaryKeys[i]}
+                    onWordPress={(word, definition) => setGlossaryWord({ word, definition })}
+                  />
+                )}
+                {effectiveMode === 'targum' && targumVerse && (
+                  <SelectableText text={targumVerse.he} style={styles.targumText} />
+                )}
+              </VerseSwipe>
               {i < reading.verses.length - 1 && <View style={styles.verseDivider} />}
             </View>
           );
@@ -647,16 +810,24 @@ export default function HomeScreen() {
         </Pressable>
       </Modal>
 
-      {/* Mark as Read */}
+      {/* Mark as Read — also set automatically on reaching the bottom */}
       <View style={styles.footer}>
-        <TouchableOpacity
-          style={[styles.readBtn, isRead && styles.readBtnDone]}
-          onPress={handleToggleRead}
+        <Animated.View
+          style={{
+            transform: [
+              { scale: readPop.interpolate({ inputRange: [0, 1], outputRange: [1, 1.12] }) },
+            ],
+          }}
         >
-          <Text style={styles.readBtnText}>
-            {isRead ? `✓ Read${offsetDays === 0 ? ' Today' : ''}` : 'Mark as Read'}
-          </Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.readBtn, isRead && styles.readBtnDone]}
+            onPress={handleToggleRead}
+          >
+            <Text style={styles.readBtnText}>
+              {isRead ? `✓ Read${offsetDays === 0 ? ' Today' : ''}` : 'Mark as Read'}
+            </Text>
+          </TouchableOpacity>
+        </Animated.View>
       </View>
 
       {/* Streak toast — floats above footer, auto-dismisses */}
@@ -773,13 +944,6 @@ const styles = StyleSheet.create({
     marginTop: 6,
     letterSpacing: 0.2,
   },
-  dayLabel: {
-    fontSize: 12,
-    color: '#D4B896',
-    marginTop: 2,
-    letterSpacing: 0.3,
-    textTransform: 'uppercase',
-  },
   refLabel: {
     fontSize: 14,
     color: '#C4A882',
@@ -876,19 +1040,35 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 0.5,
   },
-  copyRow: {
+  // Sits behind the verse and is uncovered as the row slides off it.
+  swipeHint: {
+    ...StyleSheet.absoluteFillObject,
     flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginTop: 2,
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    paddingTop: 2,
   },
-  copyBtn: {
+  swipeHintIcon: {
     fontSize: 18,
-    lineHeight: 18,
     color: BROWN,
     fontWeight: '600',
-    letterSpacing: 0.3,
-    paddingVertical: 2,
-    paddingHorizontal: 4,
+  },
+  swipeHintEnd: {
+    textAlign: 'right',
+  },
+  swipeRow: {
+    backgroundColor: PARCHMENT,
+  },
+  verseRefRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  copiedFlag: {
+    fontSize: 10,
+    color: BROWN,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
   hebrewText: {
     fontFamily: 'TaameyFrank_Regular',
