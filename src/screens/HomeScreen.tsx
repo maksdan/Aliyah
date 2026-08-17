@@ -188,6 +188,35 @@ function joinPhrase(parts: string[]): string {
   return `${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]}`;
 }
 
+// Every version the app serves, with the credit its licence requires.
+//
+// Sefaria's own guidance is that attribution goes to the source of a text
+// rather than to Sefaria, naming the publisher or translator and the licence —
+// so crediting the library alone, as this used to, satisfied neither the BY-SA
+// on the Hebrew nor the BY-NC on the translation and the Targum. The
+// NonCommercial terms are also why the app is free: charging for it, or
+// carrying ads, would need public-domain versions of these two instead.
+const TEXT_CREDITS: { label: string; title: string; by: string; license: string }[] = [
+  {
+    label: 'Hebrew',
+    title: 'Miqra according to the Masorah',
+    by: 'Hebrew Wikisource',
+    license: 'CC BY-SA',
+  },
+  {
+    label: 'English',
+    title: 'The JPS Tanakh: Gender-Sensitive Edition',
+    by: 'The Jewish Publication Society',
+    license: 'CC BY-NC',
+  },
+  {
+    label: 'Targum',
+    title: 'Metsudah Chumash (with Onkelos)',
+    by: 'Metsudah Publications, 2009',
+    license: 'CC BY-NC',
+  },
+];
+
 // "Read on Shabbat" / "Read Thu, Sep 24" — when this chunk will be leined.
 function describeLeined(iso: string): string {
   const d = new Date(iso);
@@ -219,6 +248,7 @@ export default function HomeScreen() {
   const [streak, setStreak] = useState(0);
   const [showStreakBanner, setShowStreakBanner] = useState(false);
   const [glossaryWord, setGlossaryWord] = useState<{ word: string; definition: string } | null>(null);
+  const [showCredits, setShowCredits] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const copiedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const toastAnim = useRef(new Animated.Value(0)).current;
@@ -871,15 +901,52 @@ export default function HomeScreen() {
         {/* Attribution. Sefaria's terms ask for credit where their texts are
             shown, and the end of the reading is where a reader arrives anyway. */}
         <Pressable
-          onPress={() => Linking.openURL('https://www.sefaria.org')}
-          accessibilityRole="link"
-          accessibilityLabel="Texts from Sefaria. Opens sefaria.org."
+          onPress={() => setShowCredits(true)}
+          accessibilityRole="button"
+          accessibilityLabel="Texts from Sefaria. Show sources and licences."
         >
           <Text style={styles.attribution}>
-            Hebrew, translation and Targum from <Text style={styles.attributionLink}>Sefaria</Text>
+            Hebrew, translation and Targum from{' '}
+            <Text style={styles.attributionLink}>Sefaria</Text>
+            {'  ·  '}
+            <Text style={styles.attributionLink}>sources &amp; licences</Text>
           </Text>
         </Pressable>
       </ScrollView>
+
+      {/* Sources and licences */}
+      <Modal
+        visible={showCredits}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowCredits(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setShowCredits(false)}>
+          <View style={[styles.modalContent, styles.creditsContent]}>
+            <Text style={styles.modalWord}>Texts &amp; licences</Text>
+            {TEXT_CREDITS.map((c) => (
+              <View key={c.label} style={styles.creditRow}>
+                <Text style={styles.creditLabel}>{c.label}</Text>
+                <Text style={styles.creditTitle}>{c.title}</Text>
+                <Text style={styles.creditMeta}>
+                  {c.by} · {c.license}
+                </Text>
+              </View>
+            ))}
+            <Text style={styles.creditFooter}>
+              Retrieved through{' '}
+              <Text
+                style={styles.attributionLink}
+                onPress={() => Linking.openURL('https://www.sefaria.org')}
+              >
+                Sefaria
+              </Text>
+              . This app is not affiliated with Sefaria, the Jewish Publication Society or
+              Metsudah Publications.
+            </Text>
+          </View>
+        </Pressable>
+      </Modal>
 
       {/* Glossary Popup */}
       <Modal
@@ -1173,6 +1240,34 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: MID,
     marginTop: 1,
+  },
+  creditsContent: {
+    maxWidth: 340,
+  },
+  creditRow: {
+    marginBottom: 12,
+  },
+  creditLabel: {
+    fontSize: 11,
+    color: MID,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  creditTitle: {
+    fontSize: 15,
+    color: DARK,
+    marginTop: 1,
+  },
+  creditMeta: {
+    fontSize: 12,
+    color: MID,
+    marginTop: 1,
+  },
+  creditFooter: {
+    fontSize: 12,
+    lineHeight: 18,
+    color: MID,
+    marginTop: 4,
   },
   attribution: {
     fontSize: 12,
