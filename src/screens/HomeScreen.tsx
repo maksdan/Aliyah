@@ -793,6 +793,17 @@ export default function HomeScreen() {
             </View>
           );
         })}
+        {/* Attribution. Sefaria's terms ask for credit where their texts are
+            shown, and the end of the reading is where a reader arrives anyway. */}
+        <Pressable
+          onPress={() => Linking.openURL('https://www.sefaria.org')}
+          accessibilityRole="link"
+          accessibilityLabel="Texts from Sefaria. Opens sefaria.org."
+        >
+          <Text style={styles.attribution}>
+            Hebrew, translation and Targum from <Text style={styles.attributionLink}>Sefaria</Text>
+          </Text>
+        </Pressable>
       </ScrollView>
 
       {/* Glossary Popup */}
@@ -1055,6 +1066,17 @@ const styles = StyleSheet.create({
   },
   swipeHintEnd: {
     textAlign: 'right',
+  },
+  attribution: {
+    fontSize: 12,
+    color: MID,
+    textAlign: 'center',
+    marginTop: 20,
+    marginBottom: 4,
+  },
+  attributionLink: {
+    color: BROWN,
+    textDecorationLine: 'underline',
   },
   swipeRow: {
     backgroundColor: PARCHMENT,
