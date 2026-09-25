@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import SelectableText, { glossaryKeysIn } from '../components/SelectableText';
+import { useFullTextHeight } from '../components/useFullTextHeight';
 import { DayReading, Verse, fetchTargumForReading, fetchTodayReading } from '../services/sefaria';
 import { getDarkDay } from '../services/planner';
 import type { DarkDay } from '../services/planner';
@@ -68,8 +69,9 @@ const TARGUM_COLOR = '#46617A';
 // the ta'amim, not one we invented. Verses with no etnachta render whole.
 function HebrewVerse({ text }: { text: string }) {
   const halves = useMemo(() => splitAtEtnachta(text), [text]);
+  const fullHeight = useFullTextHeight(text);
   return (
-    <Text style={styles.hebrewText}>
+    <Text style={[styles.hebrewText, fullHeight.style]} onLayout={fullHeight.onLayout}>
       {halves ? (
         <>
           {halves[0]}

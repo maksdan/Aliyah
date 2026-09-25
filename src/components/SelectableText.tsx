@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { StyleSheet, Text, TextStyle } from 'react-native';
 import { GLOSSARY } from '../data/glossary';
+import { useFullTextHeight } from './useFullTextHeight';
 
 // Renders a passage as plain <Text>.
 //
@@ -98,17 +99,18 @@ export default function SelectableText({
     () => (onWordPress ? tokenize(text, allowedKeys) : null),
     [text, allowedKeys, onWordPress],
   );
+  const fullHeight = useFullTextHeight(text);
 
   if (!tokens) {
     return (
-      <Text style={style}>
+      <Text style={[style, fullHeight.style]} onLayout={fullHeight.onLayout}>
         {text}
       </Text>
     );
   }
 
   return (
-    <Text style={style}>
+    <Text style={[style, fullHeight.style]} onLayout={fullHeight.onLayout}>
       {tokens.map((token, i) =>
         token.glossaryKey ? (
           <Text

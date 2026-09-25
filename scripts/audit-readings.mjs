@@ -79,7 +79,7 @@ function stripHtml(s) {
     .replace(/<br\s*\/?>/gi, ' ')
     .replace(/<[^>]*>/g, '')
     .replace(/\{[^}]*\}/g, ' ')
-    .replace(/&nbsp;/g, ' ')
+    .replace(/&(?:nbsp|thinsp|ensp|emsp|hairsp|#8201|#8194|#8195|#8202|#160);/g, ' ')
     .replace(/&amp;/g, '&')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')

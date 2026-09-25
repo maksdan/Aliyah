@@ -124,7 +124,10 @@ function stripHtml(s: string): string {
     .replace(/<br\s*\/?>/gi, ' ')           // <br> tags: always a word separator
     .replace(/<[^>]*>/g, '')               // inline tags (spans, b, small, etc.): remove without space
     .replace(/\{[^}]*\}/g, ' ')           // remove Torah section markers: {ס} {פ}
-    .replace(/&nbsp;/g, ' ')
+    // Spacing entities are word separators. Sefaria sets the paseq (׀) off
+    // with &thinsp; on both sides; dropping them with the catch-all below ran
+    // three words into one ("הַיּ֨וֹם׀ל֜וֹ", Deut 29:12), which read as squished.
+    .replace(/&(?:nbsp|thinsp|ensp|emsp|hairsp|#8201|#8194|#8195|#8202|#160);/g, ' ')
     .replace(/&amp;/g, '&')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
