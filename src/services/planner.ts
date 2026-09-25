@@ -1,36 +1,21 @@
 // The reading planner.
 //
-// The app is a preparation tool: it is dark on exactly the days the readings
-// happen — Shabbat and yom tov — so every reading has to be finished on the
-// prep days strictly before the day it is leined. That turns the calendar into
-// a scheduling problem, and three rules solve it:
+// The app is a preparation tool, and every week stands on its own: the days
+// Sunday to Friday prepare exactly one reading — whatever is leined on the
+// Shabbat that ends that week. The app is dark on Shabbat and yom tov, and yom
+// tov readings are not prepared at all.
 //
-//   1. BEFORE — a reading never appears on or after its own leining day.
-//   2. IN SHUL ORDER — chunks appear in the order the shul will read them:
-//      parasha, then chag I, then chag II, then the next parasha. Each reading
-//      progresses in order, its haftarah last (which is why Friday is haftarah
-//      day in a plain week — that falls out rather than being a special case).
-//   3. LEVELED — when the days before a leining can't comfortably hold it, its
-//      earliest chunks spill backward into the previous days, appended after
-//      what those days already carry, sized to keep the daily load flat. A
-//      chunk never appears more than LOOKBACK days before it is leined.
+//   - A plain week, all six days free, uses schedule.json as it always has.
+//   - A week that loses days to yom tov spreads the same Shabbat's aliyot, then
+//     its haftarah, in order over the days it has left, balanced by verses.
+//     With Pesach I on a Monday, Monday and Tuesday are dark, and Sunday,
+//     Wednesday, Thursday and Friday share Shabbat Chol HaMoed's reading.
 //
-// Plain weeks — a Shabbat parasha with all six prep days intact and no spill
-// landing on them — bypass all of this and use schedule.json exactly as ever.
-//
-// The measured stakes (diaspora, 5787–5789): without leveling the calendar
-// produces real single days of 89, 175 and 200 verses — Achrei Mot after
-// Pesach 2027, Pesach VII–VIII 2028 (one usable day), Nasso after Shavuot
-// 2028. Leveling flattens those to ~50–75, which is what the season genuinely
-// costs.
+// Nothing ever spills from one week into another.
 
 import { HDate, HebrewCalendar, flags } from '@hebcal/core';
 import { getLeyningOnDate } from '@hebcal/leyning';
 import { SCHEDULE } from '../data/schedule';
-
-const LOOKBACK = 14; // days a chunk may appear before its leining
-const RANGE_BACK = 56; // planning horizon behind the queried day…
-const RANGE_FWD = 35; // …and ahead of it; both cover any chag season whole
 
 // ---------------------------------------------------------------------------
 // Dark days
@@ -146,59 +131,6 @@ function leiningOn(abs: number): Leining | null {
   };
 }
 
-// Sukkot I and II lein the identical Torah portion. Preparing it twice in the
-// crunch of Tishrei helps no one, so consecutive leinings with the same Torah
-// text merge: the portion once, then each day's haftarah.
-function dedupe(leinings: Leining[]): Leining[] {
-  const out: Leining[] = [];
-  for (const cur of leinings) {
-    const prev = out[out.length - 1];
-    if (prev && cur.abs === prev.abs + 1) {
-      const torah = (u: Unit) => !u.isHaftarah;
-      // Signature is the merged text range: the same portion may be divided
-      // into seven aliyot on Shabbat and five on a weekday.
-      const sig = (ln: Leining) => mergeRefs(ln.units.filter(torah));
-      if (sig(prev) === sig(cur) && sig(cur) !== '') {
-        const prevHaft = prev.units.filter((u) => u.isHaftarah);
-        const curHaft = cur.units.filter((u) => u.isHaftarah);
-        prev.nameEn = mergeNames(prev.nameEn, cur.nameEn);
-        prev.nameHe = mergeNames(prev.nameHe, cur.nameHe);
-        prev.units = [
-          ...prev.units.filter(torah),
-          ...prevHaft.map((u) => ({ ...u, label: 'Haftarah I' })),
-          // The second day's haftarah may be prepared a day later; keep its own
-          // deadline by tagging the unit with the later day (see stream build).
-          ...curHaft.map((u) => ({ ...u, label: 'Haftarah II', laterAbs: cur.abs } as Unit & {
-            laterAbs?: number;
-          })),
-        ];
-        continue;
-      }
-    }
-    out.push({ ...cur, units: [...cur.units] });
-  }
-  return out;
-}
-
-// "Sukkot I" + "Sukkot II" -> "Sukkot I & II", the shared name said once.
-//
-// The ampersand is wrapped in non-breaking spaces deliberately. An en dash is a
-// line-break opportunity, so "סֻכּוֹת א׳–ב׳" broke after the dash and left the
-// ב׳ stranded alone on a second line; gluing the numerals together means the
-// only place the title can break is the space after the name itself.
-const NB = '\u00A0';
-
-function mergeNames(a: string, b: string): string {
-  const baseA = a.replace(/\s+(I|א׳)$/u, '');
-  const baseB = b.replace(/\s+(II|ב׳)$/u, '');
-  if (baseA === baseB) {
-    const tailB = b.slice(baseB.length).trim();
-    const tailA = a.slice(baseA.length).trim();
-    return `${baseA} ${tailA}${NB}&${NB}${tailB}`;
-  }
-  return `${a}${NB}&${NB}${b}`;
-}
-
 // ---------------------------------------------------------------------------
 // The plan
 // ---------------------------------------------------------------------------
@@ -219,13 +151,6 @@ export interface PlannedSegment {
 export type DayPlan =
   | { kind: 'dark'; dark: DarkDay }
   | { kind: 'prep'; segments: PlannedSegment[] };
-
-interface PrepDay {
-  abs: number;
-  base: number; // verses already carried by a pinned plain week
-  pinned?: { key: string; dayIndex: number; leinedAbs: number };
-  extras: { leining: Leining; unit: Unit }[];
-}
 
 function absOf(date: Date): number {
   return new HDate(date).abs();
@@ -262,151 +187,90 @@ function mergeRefs(units: Unit[]): string {
   return parts.join('; ');
 }
 
-// How many verses a day should carry before its window starts borrowing
-// earlier days. A typical plain day runs 15–25; plain weeks themselves spike
-// to the mid-40s (Bereshit's Monday is 43), so this is a target, not a promise.
-const DAILY_CAP = 30;
-
-interface Cluster {
-  firstAbs: number; // first dark day — every unit must be placed before this
-  units: { leining: Leining; unit: Unit }[];
+// Split units, in order, into `days` runs of roughly equal verses. Each unit
+// lands on the day where its midpoint still fits the running budget; pacing
+// against the cumulative total means an indivisible haftarah overshoots its own
+// day a little instead of pushing everything after it along. Every day gets at
+// least one unit while there are units to go round, and the last day takes
+// whatever is left.
+function distribute<T extends { verses: number }>(units: T[], days: number): T[][] {
+  const runs: T[][] = Array.from({ length: days }, () => []);
+  const total = units.reduce((s, u) => s + u.verses, 0);
+  const perDay = total / days;
+  let cum = 0;
+  let ui = 0;
+  for (let di = 0; di < days && ui < units.length; di++) {
+    const last = di === days - 1;
+    const daysAfter = days - di - 1;
+    const budget = perDay * (di + 1);
+    do {
+      runs[di].push(units[ui]);
+      cum += units[ui].verses;
+      ui++;
+    } while (
+      ui < units.length &&
+      (last ||
+        (units.length - ui > daysAfter && cum + units[ui].verses / 2 <= budget))
+    );
+  }
+  return runs;
 }
 
-function computePlan(anchorAbs: number): Map<number, PrepDay> {
-  const startAbs = anchorAbs - RANGE_BACK;
-  const endAbs = anchorAbs + RANGE_FWD;
-
-  // Walk the range: prep days, and leinings grouped into clusters of
-  // consecutive dark days (Shabbat + adjacent yom tov read as one block).
-  const prepDays: PrepDay[] = [];
-  const rawLeinings: Leining[] = [];
-  for (let abs = startAbs; abs <= endAbs; abs++) {
-    const date = dateOfAbs(abs);
-    if (getDarkDay(date)) {
-      const ln = leiningOn(abs);
-      if (ln) rawLeinings.push(ln);
-    } else {
-      prepDays.push({ abs, base: 0, extras: [] });
-    }
-  }
-  const leinings = dedupe(rawLeinings);
-  const prepByAbs = new Map(prepDays.map((d) => [d.abs, d]));
-
-  // Pin plain weeks; everything else joins its cluster.
-  const clusters: Cluster[] = [];
-  for (const ln of leinings) {
-    const schedule = ln.parashaKey ? SCHEDULE[ln.parashaKey] : undefined;
-    const weekIntact =
-      schedule && [6, 5, 4, 3, 2, 1].every((back) => prepByAbs.has(ln.abs - back));
-    if (schedule && weekIntact) {
-      for (let back = 6; back >= 1; back--) {
-        const day = prepByAbs.get(ln.abs - back)!;
-        const dayIndex = 6 - back; // Sunday=0 … Friday=5
-        const schedDay = schedule.days[dayIndex];
-        if (!schedDay) continue;
-        day.pinned = { key: ln.parashaKey!, dayIndex, leinedAbs: ln.abs };
-        day.base = schedDay.verses;
-      }
-      continue;
-    }
-    const prev = clusters[clusters.length - 1];
-    const cluster =
-      prev && isSameBlock(prev, ln, prepByAbs) ? prev : { firstAbs: ln.abs, units: [] };
-    if (cluster !== prev) clusters.push(cluster);
-    for (const unit of ln.units) cluster.units.push({ leining: ln, unit });
-  }
-
-  // Level each cluster into the days before it: its home window first, then —
-  // only when a day would run past DAILY_CAP — earlier days, never more than
-  // LOOKBACK days before the leining, borrowed chunks appended after whatever
-  // those days already carry.
-  const dayLoad = (d: PrepDay) => d.base + d.extras.reduce((s, e) => s + e.unit.verses, 0);
-  for (const cluster of clusters) {
-    const total = cluster.units.reduce((s, u) => s + u.unit.verses, 0);
-    if (total === 0) continue;
-
-    // The home window: prep days between the previous dark day and the cluster.
-    let poolStart = cluster.firstAbs - 1;
-    while (prepByAbs.has(poolStart - 1)) poolStart--;
-    const earliestAllowed = Math.max(cluster.firstAbs - LOOKBACK, startAbs);
-
-    const buildPool = (fromAbs: number) => {
-      const pool: PrepDay[] = [];
-      for (let abs = fromAbs; abs < cluster.firstAbs; abs++) {
-        const day = prepByAbs.get(abs);
-        if (day) pool.push(day);
-      }
-      return pool;
-    };
-
-    let pool = buildPool(poolStart);
-    // Expand backward day by day while the leveled load would breach the cap.
-    while (poolStart > earliestAllowed) {
-      const existing = pool.reduce((s, d) => s + dayLoad(d), 0);
-      if (pool.length > 0 && (existing + total) / pool.length <= DAILY_CAP) break;
-      poolStart--;
-      pool = buildPool(poolStart);
-    }
-    if (pool.length === 0) continue; // nothing usable — should not happen in practice
-
-    // Cumulative fill: each unit lands on the day where its midpoint still
-    // fits the running budget. Pacing against the cumulative total rather than
-    // a per-day quota means an indivisible haftarah overshoots its own day a
-    // little instead of dragging the whole tail forward and leaving the last
-    // days of the window empty.
-    const existing = pool.map((d) => dayLoad(d));
-    const totalAll = existing.reduce((s, v) => s + v, 0) + total;
-    const perDay = totalAll / pool.length;
-    let cum = 0;
-    let ui = 0;
-    for (let di = 0; di < pool.length && ui < cluster.units.length; di++) {
-      cum += existing[di];
-      const budget = perDay * (di + 1);
-      while (
-        ui < cluster.units.length &&
-        (di === pool.length - 1 || cum + cluster.units[ui].unit.verses / 2 <= budget)
-      ) {
-        pool[di].extras.push(cluster.units[ui]);
-        cum += cluster.units[ui].unit.verses;
-        ui++;
-      }
-    }
-  }
-
-  return prepByAbs;
+interface WeekDay {
+  // A plain week's day, served straight from schedule.json.
+  pinned?: { key: string; dayIndex: number };
+  // Otherwise the run of the Shabbat's units this day prepares.
+  units: Unit[];
 }
 
-// Two leinings share a block when their dark days are consecutive — no prep
-// day between them.
-function isSameBlock(
-  cluster: Cluster,
-  ln: Leining,
-  prepByAbs: Map<number, PrepDay>,
-): boolean {
-  for (let abs = cluster.firstAbs; abs < ln.abs; abs++) {
-    if (prepByAbs.has(abs)) return false;
-  }
-  return true;
+interface WeekPlan {
+  leining: Leining | null;
+  days: Map<number, WeekDay>; // prep days only, keyed by abs
 }
 
-// A small cache: plans are deterministic per anchor, and navigation revisits
-// neighbouring days constantly.
-const planCache = new Map<number, Map<number, PrepDay>>();
+function computeWeek(shabbatAbs: number): WeekPlan {
+  const prepAbs: number[] = [];
+  for (let back = 6; back >= 1; back--) {
+    const abs = shabbatAbs - back;
+    if (!getDarkDay(dateOfAbs(abs))) prepAbs.push(abs);
+  }
 
-function planFor(abs: number): Map<number, PrepDay> {
-  // Anchor plans to a fixed grid so neighbouring days share one plan and the
-  // cache stays small. Grid step is well under RANGE_BACK/RANGE_FWD margins.
-  const anchor = abs - (abs % 7);
-  let plan = planCache.get(anchor);
-  if (!plan) {
-    plan = computePlan(anchor);
-    planCache.set(anchor, plan);
-    if (planCache.size > 12) {
-      const first = planCache.keys().next().value;
-      if (first !== undefined) planCache.delete(first);
+  const leining = leiningOn(shabbatAbs);
+  const days = new Map<number, WeekDay>();
+  if (!leining) {
+    for (const abs of prepAbs) days.set(abs, { units: [] });
+    return { leining, days };
+  }
+
+  const schedule = leining.parashaKey ? SCHEDULE[leining.parashaKey] : undefined;
+  if (schedule && prepAbs.length === 6) {
+    prepAbs.forEach((abs, dayIndex) =>
+      days.set(abs, { pinned: { key: leining.parashaKey!, dayIndex }, units: [] }),
+    );
+    return { leining, days };
+  }
+
+  const runs = distribute(leining.units, Math.max(prepAbs.length, 1));
+  prepAbs.forEach((abs, i) => days.set(abs, { units: runs[i] ?? [] }));
+  return { leining, days };
+}
+
+// Plans are deterministic per week, and navigation revisits neighbouring days
+// constantly, so keep the last few.
+const weekCache = new Map<number, WeekPlan>();
+
+function weekFor(abs: number, date: Date): { shabbatAbs: number; week: WeekPlan } {
+  const shabbatAbs = abs + (6 - date.getDay());
+  let week = weekCache.get(shabbatAbs);
+  if (!week) {
+    week = computeWeek(shabbatAbs);
+    weekCache.set(shabbatAbs, week);
+    if (weekCache.size > 12) {
+      const first = weekCache.keys().next().value;
+      if (first !== undefined) weekCache.delete(first);
     }
   }
-  return plan;
+  return { shabbatAbs, week };
 }
 
 export function planDay(date: Date): DayPlan {
@@ -414,60 +278,50 @@ export function planDay(date: Date): DayPlan {
   if (dark) return { kind: 'dark', dark };
 
   const abs = absOf(date);
-  const day = planFor(abs).get(abs);
-  if (!day) return { kind: 'prep', segments: [] };
-
-  const segments: PlannedSegment[] = [];
+  const { shabbatAbs, week } = weekFor(abs, date);
+  const day = week.days.get(abs);
+  if (!day || !week.leining) return { kind: 'prep', segments: [] };
+  const leinedOn = dateOfAbs(shabbatAbs).toISOString();
 
   if (day.pinned) {
-    const schedule = SCHEDULE[day.pinned.key];
-    const schedDay = schedule?.days[day.pinned.dayIndex];
-    if (schedDay) {
-      const isHaftarah = schedDay.aliyot.some((a) => typeof a === 'string');
-      segments.push({
-        nameEn: day.pinned.key,
-        nameHe: '', // filled from PARASHA_HEBREW_NAMES by the fetch layer
-        isParasha: true,
-        parashaKey: day.pinned.key,
-        leinedOn: dateOfAbs(day.pinned.leinedAbs).toISOString(),
-        aliyot: schedDay.aliyot,
-        ref: schedDay.ref,
-        isHaftarah,
-        pinnedHaftarahDay: isHaftarah,
-      });
-    }
+    const schedDay = SCHEDULE[day.pinned.key]?.days[day.pinned.dayIndex];
+    if (!schedDay) return { kind: 'prep', segments: [] };
+    const isHaftarah = schedDay.aliyot.some((a) => typeof a === 'string');
+    return {
+      kind: 'prep',
+      segments: [
+        {
+          nameEn: day.pinned.key,
+          nameHe: '', // filled from PARASHA_HEBREW_NAMES by the fetch layer
+          isParasha: true,
+          parashaKey: day.pinned.key,
+          leinedOn,
+          aliyot: schedDay.aliyot,
+          ref: schedDay.ref,
+          isHaftarah,
+          pinnedHaftarahDay: isHaftarah,
+        },
+      ],
+    };
   }
 
-  // Group consecutive extras of the same leining, haftarah units always their
-  // own segment so Torah and haftarah never share a ref (or a Targum request).
-  let group: { leining: Leining; units: Unit[] } | null = null;
-  const flush = () => {
-    if (!group) return;
+  // Torah and haftarah are separate segments, so they never share a ref (or a
+  // Targum request).
+  const leining = week.leining;
+  const segments: PlannedSegment[] = [];
+  for (const isHaftarah of [false, true]) {
+    const units = day.units.filter((u) => u.isHaftarah === isHaftarah);
+    if (units.length === 0) continue;
     segments.push({
-      nameEn: group.leining.nameEn,
-      nameHe: group.leining.nameHe,
-      isParasha: !!group.leining.parashaKey,
-      parashaKey: group.leining.parashaKey,
-      leinedOn: dateOfAbs(group.leining.abs).toISOString(),
-      aliyot: group.units.map((u) => u.label),
-      ref: mergeRefs(group.units),
-      isHaftarah: group.units.every((u) => u.isHaftarah),
+      nameEn: leining.nameEn,
+      nameHe: leining.nameHe,
+      isParasha: !!leining.parashaKey,
+      parashaKey: leining.parashaKey,
+      leinedOn,
+      aliyot: units.map((u) => u.label),
+      ref: mergeRefs(units),
+      isHaftarah,
     });
-    group = null;
-  };
-  for (const extra of day.extras) {
-    const splitsFromGroup =
-      !group ||
-      group.leining !== extra.leining ||
-      group.units[0].isHaftarah !== extra.unit.isHaftarah;
-    if (splitsFromGroup) {
-      flush();
-      group = { leining: extra.leining, units: [extra.unit] };
-    } else {
-      group!.units.push(extra.unit);
-    }
   }
-  flush();
-
   return { kind: 'prep', segments };
 }
