@@ -45,11 +45,16 @@ function reminderId(d: Date, hour: number): string {
   return `${REMINDER_PREFIX}${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}-${hour}`;
 }
 
+// Everything on the schedule except the weekly congrats is a reminder, and is
+// cleared here. Matching on REMINDER_PREFIX alone was not enough: builds before
+// the dated window scheduled a repeating WEEKLY 9am alert under an
+// auto-generated identifier, and on any phone that ever ran one it survived
+// every rebuild and fired alongside the new 9am, so 9am arrived twice.
 async function cancelAllReminders(): Promise<void> {
   const pending = await Notifications.getAllScheduledNotificationsAsync();
   await Promise.all(
     pending
-      .filter((n) => n.identifier.startsWith(REMINDER_PREFIX))
+      .filter((n) => n.identifier !== CONGRATS_ID)
       .map((n) => Notifications.cancelScheduledNotificationAsync(n.identifier).catch(() => {})),
   );
 }
@@ -74,7 +79,17 @@ export async function refreshReminders(): Promise<void> {
   }
 }
 
-async function buildReminderWindow(): Promise<void> {
+// Launch alone starts several refreshes at once (mount, the first 'active'
+// state change). Interleaved, one run's cancel can land between another's
+// schedules, so each rebuild waits for the one before it to finish.
+let rebuildChain: Promise<void> = Promise.resolve();
+
+function buildReminderWindow(): Promise<void> {
+  rebuildChain = rebuildChain.catch(() => {}).then(rebuildReminderWindow);
+  return rebuildChain;
+}
+
+async function rebuildReminderWindow(): Promise<void> {
   await cancelAllReminders();
 
   const now = new Date();
