@@ -72,10 +72,26 @@ export function normalizeRef(ref: string): string {
 }
 
 interface Unit {
-  label: number | string; // 1…7, 'Maftir', 'Haftarah', 'Haftarah I'…
+  label: number | string; // 1…7, 'Haftarah'
   ref: string;
   verses: number;
   isHaftarah: boolean;
+  // A haftarah the Shabbat reads in place of the parasha's own — Rosh Chodesh,
+  // Machar Chodesh, Chanukah, the four parshiyot, Shuva, HaGadol — named for
+  // the reader, since the header otherwise says only the parasha.
+  occasion?: string;
+  sephardicRef?: string; // set only where the Sephardi haftarah differs
+}
+
+// hebcal's reasons are written for a calendar, not a header: "Chanukah Day 1
+// (on Shabbat)", "Shabbat Shuva (with Ha'azinu)", "Pinchas occurring after 17
+// Tammuz". Say what the reader needs: which Shabbat this haftarah belongs to.
+function haftarahOccasion(reason: string): string {
+  if (/^Chanukah\b/.test(reason)) return 'Shabbat Chanukah';
+  if (reason === 'Shabbat Machar Chodesh') return 'Erev Rosh Chodesh';
+  if (/after 17 Tammuz/.test(reason)) return 'the Three Weeks';
+  if (/3rd Haftarah of Consolation/.test(reason)) return 'Ki Teitzei and Re\u2019eh, joined';
+  return reason.replace(/\s*\([^)]*\)\s*$/, '').trim();
 }
 
 interface Leining {
@@ -119,7 +135,16 @@ function leiningOn(abs: number): Leining | null {
   if (l.haftara) {
     const hafts = Array.isArray(l.haft) ? l.haft : l.haft ? [l.haft] : [];
     const verses = hafts.reduce((s, h) => s + ((h as { v?: number }).v ?? 0), 0);
-    units.push({ label: 'Haftarah', ref: normalizeRef(l.haftara), verses, isHaftarah: true });
+    const reason = (l as { reason?: { haftara?: string } }).reason?.haftara;
+    const sephardic = (l as { sephardic?: string }).sephardic;
+    units.push({
+      label: 'Haftarah',
+      ref: normalizeRef(l.haftara),
+      verses,
+      isHaftarah: true,
+      occasion: reason ? haftarahOccasion(reason) : undefined,
+      sephardicRef: sephardic ? normalizeRef(sephardic) : undefined,
+    });
   }
 
   return {
@@ -145,7 +170,9 @@ export interface PlannedSegment {
   aliyot: (number | string)[];
   ref: string;
   isHaftarah: boolean; // segment is purely haftarah
-  pinnedHaftarahDay?: boolean; // plain Friday — rite override applies
+  pinnedHaftarahDay?: boolean; // plain Friday from schedule.json — its rite table applies
+  occasion?: string; // a special haftarah's Shabbat, e.g. "Shabbat Rosh Chodesh"
+  sephardicRef?: string; // the Sephardi haftarah, where hebcal gives one that differs
 }
 
 export type DayPlan =
@@ -287,6 +314,31 @@ export function planDay(date: Date): DayPlan {
     const schedDay = SCHEDULE[day.pinned.key]?.days[day.pinned.dayIndex];
     if (!schedDay) return { kind: 'prep', segments: [] };
     const isHaftarah = schedDay.aliyot.some((a) => typeof a === 'string');
+    // schedule.json knows each parasha's own haftarah only. When the Shabbat
+    // reads a special one instead, Friday prepares that — Chanukah, Rosh
+    // Chodesh and the four parshiyot all fall in otherwise plain weeks.
+    const special = isHaftarah
+      ? week.leining.units.find((u) => u.isHaftarah && u.occasion)
+      : undefined;
+    if (special) {
+      return {
+        kind: 'prep',
+        segments: [
+          {
+            nameEn: day.pinned.key,
+            nameHe: '',
+            isParasha: true,
+            parashaKey: day.pinned.key,
+            leinedOn,
+            aliyot: ['Haftarah'],
+            ref: special.ref,
+            isHaftarah: true,
+            occasion: special.occasion,
+            sephardicRef: special.sephardicRef,
+          },
+        ],
+      };
+    }
     return {
       kind: 'prep',
       segments: [
@@ -321,6 +373,8 @@ export function planDay(date: Date): DayPlan {
       aliyot: units.map((u) => u.label),
       ref: mergeRefs(units),
       isHaftarah,
+      occasion: isHaftarah ? units[0].occasion : undefined,
+      sephardicRef: isHaftarah ? units[0].sephardicRef : undefined,
     });
   }
   return { kind: 'prep', segments };

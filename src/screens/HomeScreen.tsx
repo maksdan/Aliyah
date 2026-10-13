@@ -19,7 +19,7 @@ import { useFullTextHeight } from '../components/useFullTextHeight';
 import { DayReading, Verse, fetchTargumForReading, fetchTodayReading } from '../services/sefaria';
 import { getDarkDay } from '../services/planner';
 import type { DarkDay } from '../services/planner';
-import { Rite, SEPHARDI_HAFTARAH } from '../data/schedule';
+import { Rite } from '../data/schedule';
 import { splitAtEtnachta } from '../utils/phrasing';
 import { refreshReminders, requestPermissionAndSchedule } from '../services/notifications';
 import { CUSTOM_TRANSLITERATION_ENABLED, PARASHA_TRANSLITERATIONS } from '../data/transliterations';
@@ -776,7 +776,7 @@ export default function HomeScreen() {
         <Text style={styles.refLabelEn}>{reading.ref}</Text>
 
         {/* Friday: Ashkenazi / Sephardi Haftarah toggle — only when the two rites differ */}
-        {reading.isHaftarah && SEPHARDI_HAFTARAH[reading.parashaEn] !== undefined && (
+        {reading.riteMatters && (
           <View style={styles.riteRow}>
             {RITES.map(({ key, label }) => (
               <Pressable

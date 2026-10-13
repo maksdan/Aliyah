@@ -3,7 +3,7 @@ import type { PlannedSegment } from './planner';
 import { planDay } from './planner';
 import { DAY_NAMES_EN, formatAliyotLabel } from '../utils/aliyah';
 import type { Rite } from '../data/schedule';
-import { getHaftarahRef } from '../data/schedule';
+import { SEPHARDI_HAFTARAH, getHaftarahRef } from '../data/schedule';
 
 const BASE = 'https://www.sefaria.org/api';
 
@@ -23,6 +23,7 @@ export interface ReadingSegment {
   sectionLabel: string; // "Aliyot 2 & 3", "Haftarah", "Maftir"
   leinedOn: string; // ISO date of the leining this prepares
   isHaftarah: boolean;
+  riteMatters: boolean; // a haftarah whose Ashkenazi and Sephardi texts differ
   ref: string;
   heRef: string;
   book: string;
@@ -45,6 +46,7 @@ export interface DayReading {
   segments: ReadingSegment[];
   segmentOfVerse: number[]; // flat verse index -> segment index
   isHoliday?: boolean; // first segment is a chag's reading
+  riteMatters: boolean; // a whole-haftarah day whose two rites read different texts
 }
 
 interface TextResponse {
@@ -302,23 +304,33 @@ export async function fetchTodayReading(rite: Rite, date: Date = new Date()): Pr
     segments: nonEmpty,
     segmentOfVerse,
     isHoliday: first.isHoliday,
+    riteMatters: wholeDayHaftarah && nonEmpty.some((s) => s.riteMatters),
   };
 }
 
 async function fetchSegment(ps: PlannedSegment, rite: Rite): Promise<ReadingSegment | null> {
-  // A plain Friday keeps the Ashkenazi/Sephardi haftarah choice.
-  const ref = ps.pinnedHaftarahDay && ps.parashaKey
-    ? getHaftarahRef(ps.parashaKey, rite, ps.ref)
-    : ps.ref;
+  // The Ashkenazi/Sephardi choice: hebcal's own Sephardi text where it gives
+  // one (special haftarot, and every haftarah in a short week), otherwise the
+  // plain Friday's table.
+  const ref = ps.sephardicRef
+    ? (rite === 'sephardi' ? ps.sephardicRef : ps.ref)
+    : ps.pinnedHaftarahDay && ps.parashaKey
+      ? getHaftarahRef(ps.parashaKey, rite, ps.ref)
+      : ps.ref;
+  const riteMatters =
+    ps.isHaftarah &&
+    (!!ps.sephardicRef ||
+      (!!ps.pinnedHaftarahDay && !!ps.parashaKey && SEPHARDI_HAFTARAH[ps.parashaKey] !== undefined));
   const { verses, heRef, book } = await fetchRef(ref);
   if (verses.length === 0) return null;
   return {
     nameEn: ps.nameEn,
     nameHe: ps.isParasha ? parashaHebrewName(ps.nameEn) || ps.nameHe || ps.nameEn : ps.nameHe,
     isHoliday: !ps.isParasha,
-    sectionLabel: formatAliyotLabel(ps.aliyot),
+    sectionLabel: ps.occasion ? `Haftarah for ${ps.occasion}` : formatAliyotLabel(ps.aliyot),
     leinedOn: ps.leinedOn,
     isHaftarah: ps.isHaftarah,
+    riteMatters,
     ref,
     heRef,
     book,
