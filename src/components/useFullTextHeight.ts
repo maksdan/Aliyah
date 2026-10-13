@@ -1,49 +1,49 @@
 import { useCallback, useState } from 'react';
+import { useWindowDimensions } from 'react-native';
 import type { LayoutChangeEvent, TextStyle } from 'react-native';
 
 // Keeps iOS from dropping the last line of a multi-line <Text>.
 //
-// Yoga rounds each view's edges to the pixel grid and takes the height as the
-// difference of the two rounded edges. On a 3x screen that difference carries
-// float error, so a paragraph far down a long scroll is committed a hair under
-// the height it measured: four 24pt lines of Genesis 21:16's translation came
-// out 95.99988 tall, not 96. TextKit's "does this line fit" test is strict, so
-// rather than absorb the shortfall it gives up the last line and runs its words
-// onto the line above, past the edge. In English that clips the final word; in
-// Hebrew the overflow lands at the right, where the line starts, and reads as
-// squished letters. A blank gap is left where the lost line should have been.
+// A paragraph's box can come out a sliver shorter than its lines need, and
+// TextKit's "does this line fit" test is strict: rather than absorb the
+// shortfall it gives up the last line and runs its words onto the line above,
+// past the edge. In English that clips the final word; in Hebrew the overflow
+// lands at the right, where the line starts, and reads as squished letters,
+// with a blank gap below where the lost line should have been.
 //
-// Upstream fix: https://github.com/react/yoga/pull/2011, not yet in a release.
-// Until then, a paragraph that comes out a sliver short of a whole point is
-// floored at that whole point plus a little, so the error lands in spare space
-// instead of in the text. Heights here are whole points (lines × lineHeight),
-// so a value just under an integer can only be this rounding error.
-const SHORTFALL = 0.01; // a real line is never this close to a whole point
-const SLACK = 0.5;
+// Two roundings produce the sliver, and they add up:
+//   - Yoga rounds each view's edges to the pixel grid and takes height as their
+//     difference, which carries float error far down a long scroll: four 24pt
+//     lines of Genesis 21:16's translation came out 95.99988, not 96.
+//     Upstream fix: https://github.com/react/yoga/pull/2011, not yet released.
+//   - At a larger iOS text size the scaled line height is not a whole number of
+//     pixels, and the box is rounded down to the grid: at the largest standard
+//     size Genesis 8:17 needs 230.01 for five lines and was given 230.
+//
+// Neither error reaches a point, so every paragraph gets one spare point under
+// its measured height. It is invisible, and it is where the shortfall lands.
+const SLACK = 1;
 
 export function useFullTextHeight(text: string): {
   style: TextStyle | undefined;
   onLayout: (e: LayoutChangeEvent) => void;
 } {
-  // Tied to the text it was measured for: rows are reused when the day changes,
-  // and a floor from yesterday's verse must not hold open today's.
-  const [floor, setFloor] = useState<{ text: string; minHeight: number } | null>(null);
+  // Measured once per text at the current iOS text size, and never again: the
+  // floored box rounds to the pixel grid itself, so re-measuring it would look
+  // like growth and add another point each pass. A new verse (rows are reused
+  // when the day changes) or a new text size starts from the natural height.
+  const { fontScale } = useWindowDimensions();
+  const key = `${fontScale}|${text}`;
+  const [floor, setFloor] = useState<{ key: string; minHeight: number } | null>(null);
 
   const onLayout = useCallback(
     (e: LayoutChangeEvent) => {
       const { height } = e.nativeEvent.layout;
-      const whole = Math.round(height);
-      if (height < whole && whole - height < SHORTFALL) {
-        setFloor((prev) =>
-          prev && prev.text === text && prev.minHeight >= whole + SLACK
-            ? prev
-            : { text, minHeight: whole + SLACK },
-        );
-      }
+      setFloor((prev) => (prev && prev.key === key ? prev : { key, minHeight: height + SLACK }));
     },
-    [text],
+    [key],
   );
 
-  const style = floor && floor.text === text ? { minHeight: floor.minHeight } : undefined;
+  const style = floor && floor.key === key ? { minHeight: floor.minHeight } : undefined;
   return { style, onLayout };
 }
