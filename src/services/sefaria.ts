@@ -338,6 +338,62 @@ async function fetchSegment(ps: PlannedSegment, rite: Rite): Promise<ReadingSegm
   };
 }
 
+// Russian: the Da Project translation (Dmitri Slivniak, ed. Itzhak Streshinsky,
+// 2011), the one Russian version on Sefaria with a licence. It is complete for
+// the Torah, but among the prophets it covers only Judges, Samuel and Kings —
+// so most haftarot, special ones included, have no Russian at all.
+const RUSSIAN_VERSION =
+  'Russian Torah translation, by Dmitri Slivniak, Ph.D., edited by Dr. Itzhak Streshinsky. Da Project, 2011 [ru]';
+const RUSSIAN_BOOKS = new Set([
+  'Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy',
+  'Judges', 'I Samuel', 'II Samuel', 'I Kings', 'II Kings',
+]);
+
+function bookOf(part: string): string {
+  return part.replace(/\s+\d[\d:\-\s,.]*$/, '').trim();
+}
+
+// Whether every passage of the day lies in a book the Russian covers. Decided
+// from the refs alone, so the screen knows before any fetch whether to offer
+// the tab or fall back to English.
+export function russianAvailable(reading: DayReading): boolean {
+  return reading.segments.every((s) =>
+    s.ref.split(/;\s*/).filter(Boolean).every((p) => RUSSIAN_BOOKS.has(bookOf(p))),
+  );
+}
+
+async function fetchRussianPart(ref: string): Promise<string[]> {
+  const res = await fetch(
+    `${BASE}/texts/${encodeURIComponent(ref)}?commentary=0&context=0&pad=0&wrapLinks=0&stripItags=1` +
+      `&ven=${encodeURIComponent(RUSSIAN_VERSION)}`,
+  );
+  if (!res.ok) throw new Error('Could not load the Russian from Sefaria');
+  const data = (await res.json()) as TextResponse & { versionTitle?: string };
+  // An unknown version title comes back as the default English, not an error.
+  if (data.versionTitle !== RUSSIAN_VERSION) throw new Error('Russian version not served');
+  return flattenText(data.text).map(stripHtml);
+}
+
+// The day's Russian, aligned to the flat verse index. Null unless every verse
+// has it: a day is shown wholly in Russian or wholly in English, never mixed.
+export async function fetchRussianForReading(reading: DayReading): Promise<string[] | null> {
+  if (!russianAvailable(reading)) return null;
+  try {
+    const per = await Promise.all(
+      reading.segments.map(async (s) => {
+        const parts = s.ref.split(/;\s*/).filter(Boolean);
+        const texts = (await Promise.all(parts.map(fetchRussianPart))).flat();
+        return texts.length === s.verses.length ? texts : null;
+      }),
+    );
+    if (per.some((p) => p === null)) return null;
+    const flat = (per as string[][]).flat();
+    return flat.every((t) => t.trim() !== '') ? flat : null;
+  } catch {
+    return null;
+  }
+}
+
 // Targum Onkelos for the whole day, aligned to the flat verse index: Torah
 // segments get their verses, haftarah segments get nulls. Null overall when no
 // segment has Onkelos at all.

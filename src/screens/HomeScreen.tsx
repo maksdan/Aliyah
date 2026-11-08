@@ -16,7 +16,14 @@ import {
 import * as Clipboard from 'expo-clipboard';
 import SelectableText, { glossaryKeysIn } from '../components/SelectableText';
 import { useFullTextHeight } from '../components/useFullTextHeight';
-import { DayReading, Verse, fetchTargumForReading, fetchTodayReading } from '../services/sefaria';
+import {
+  DayReading,
+  Verse,
+  fetchRussianForReading,
+  fetchTargumForReading,
+  fetchTodayReading,
+  russianAvailable,
+} from '../services/sefaria';
 import { getDarkDay } from '../services/planner';
 import type { DarkDay } from '../services/planner';
 import { Rite } from '../data/schedule';
@@ -38,11 +45,12 @@ import {
 } from '../utils/storage';
 import { refreshWeeklyStreak } from '../utils/tracker';
 
-type DisplayMode = 'bilingual' | 'targum';
+type DisplayMode = 'bilingual' | 'targum' | 'russian';
 
 const MODES: { key: DisplayMode; label: string }[] = [
   { key: 'bilingual', label: 'English' },
   { key: 'targum', label: 'Aramaic' },
+  { key: 'russian', label: 'Русский' },
 ];
 
 const RITES: { key: Rite; label: string }[] = [
@@ -217,6 +225,12 @@ const TEXT_CREDITS: { label: string; title: string; by: string; license: string 
     by: 'Metsudah Publications, 2009',
     license: 'CC BY-NC',
   },
+  {
+    label: 'Russian',
+    title: 'Russian Torah translation, ed. Itzhak Streshinsky',
+    by: 'Dmitri Slivniak, Da Project, 2011',
+    license: 'CC BY-NC',
+  },
 ];
 
 // "Read on Shabbat" / "Read Thu, Sep 24" — when this chunk will be leined.
@@ -226,12 +240,19 @@ function describeLeined(iso: string): string {
   return `Read ${d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}`;
 }
 
-function buildShareText(book: string, verse: Verse, mode: DisplayMode, targumVerse?: Verse): string {
+function buildShareText(
+  book: string,
+  verse: Verse,
+  mode: DisplayMode,
+  targumVerse?: Verse,
+  russian?: string,
+): string {
   const source = `${book} ${verse.ref}`.trim();
   const lines: string[] = [];
   if (verse.he) lines.push(verse.he);
   if (mode === 'bilingual' && verse.en) lines.push(verse.en);
   if (mode === 'targum' && targumVerse?.he) lines.push(targumVerse.he);
+  if (mode === 'russian' && russian) lines.push(russian);
   return `«${lines.join('\n')}»\n— ${source}`;
 }
 
@@ -245,6 +266,10 @@ export default function HomeScreen() {
   const [targumVerses, setTargumVerses] = useState<(Verse | null)[] | null>(null);
   const [targumLoading, setTargumLoading] = useState(false);
   const [targumUnavailable, setTargumUnavailable] = useState(false);
+  const [russianVerses, setRussianVerses] = useState<string[] | null>(null);
+  const [russianLoading, setRussianLoading] = useState(false);
+  const [russianFailed, setRussianFailed] = useState(false);
+  const russianReqRef = useRef<string | null>(null);
   const [rite, setRite] = useState<Rite>('ashkenazi');
   const [isRead, setIsRead] = useState(false);
   const [streak, setStreak] = useState(0);
@@ -266,17 +291,22 @@ export default function HomeScreen() {
   // at different heights). Non-null means a restore is outstanding, which also
   // suppresses position saves so a stale offset can't be written onto the
   // incoming day's key.
-  type PendingScroll = { kind: 'offset'; y: number } | { kind: 'verse'; index: number };
+  // A verse anchor keeps the reader's exact place: `delta` is how far into
+  // the verse the top of the screen was, so a switch lands mid-verse when the
+  // reader was mid-verse rather than snapping to the verse's start.
+  type PendingScroll =
+    | { kind: 'offset'; y: number }
+    | { kind: 'verse'; index: number; delta: number };
   const scrollRef = useRef<ScrollView>(null);
   const pendingScrollRef = useRef<PendingScroll | null>(null);
   const viewportRef = useRef(0);
   const contentHeightRef = useRef(0);
   const scrollYRef = useRef(0);
   const verseOffsetsRef = useRef<number[]>([]);
-  // Verse to re-anchor to once Onkelos finishes loading: the first switch to
-  // Aramaic lays out with Hebrew alone, and the verses shift down when the
-  // Aramaic arrives a moment later.
-  const reanchorRef = useRef<number | null>(null);
+  // Place to re-anchor to once a translation finishes loading: the first
+  // switch to Aramaic or Russian lays out with Hebrew alone, and the verses
+  // grow when the translation arrives a moment later.
+  const reanchorRef = useRef<PendingScroll | null>(null);
   const shownDateRef = useRef(new Date());
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -322,6 +352,10 @@ export default function HomeScreen() {
     setTargumUnavailable(false);
     setTargumLoading(false);
     targumReqRef.current = null; // a new day means a new Onkelos passage
+    setRussianVerses(null);
+    setRussianFailed(false);
+    setRussianLoading(false);
+    russianReqRef.current = null;
     reanchorRef.current = null;
     const target = new Date();
     target.setDate(target.getDate() + offsetDays);
@@ -373,7 +407,9 @@ export default function HomeScreen() {
   useEffect(() => {
     (async () => {
       const [savedMode, savedRite] = await Promise.all([getSavedMode(), getSavedRite()]);
-      if (savedMode === 'targum' || savedMode === 'bilingual') setMode(savedMode);
+      if (savedMode === 'targum' || savedMode === 'bilingual' || savedMode === 'russian') {
+        setMode(savedMode);
+      }
       if (savedRite === 'ashkenazi' || savedRite === 'sephardi') setRite(savedRite);
     })();
   }, []);
@@ -384,21 +420,33 @@ export default function HomeScreen() {
     if (settleTimer.current) clearTimeout(settleTimer.current);
   }, []);
 
-  // Haftarah has no Onkelos, so it always displays bilingually — without
-  // forcing the reader's saved tab back to English.
-  const effectiveMode: DisplayMode = reading?.isHaftarah ? 'bilingual' : mode;
+  // Whether the whole day has Russian: the Torah always does, but most
+  // haftarot come from books the Russian translation does not cover.
+  const canRussian = useMemo(() => (reading ? russianAvailable(reading) : false), [reading]);
 
-  // The verse currently at the top of the viewport — the anchor we hold on to
-  // when the text under it is about to be replaced.
-  const topVerseIndex = useCallback(() => {
+  // What the day can actually show, without touching the reader's saved tab:
+  // Haftarah has no Onkelos, and a day without Russian falls back to English.
+  // Either way the saved choice stands, and the next day that has it opens in it.
+  const effectiveMode: DisplayMode =
+    mode === 'russian'
+      ? canRussian && !russianFailed ? 'russian' : 'bilingual'
+      : mode === 'targum' && reading?.isHaftarah ? 'bilingual' : mode;
+
+
+  // Where the reader is, as something that survives the text under them being
+  // replaced: the verse at the top of the screen and how far into it they
+  // are. Above the first verse nothing moves when the language changes (the
+  // page's top padding is the same in every tab), so a plain offset is kept.
+  const topAnchor = useCallback((): PendingScroll => {
     const offsets = verseOffsetsRef.current;
+    const y = scrollYRef.current;
+    if (offsets[0] === undefined || y <= offsets[0]) return { kind: 'offset', y: Math.max(0, y) };
     let index = 0;
     for (let i = 0; i < offsets.length; i++) {
-      if (offsets[i] === undefined) break;
-      if (offsets[i] > scrollYRef.current + 1) break;
+      if (offsets[i] === undefined || offsets[i] > y) break;
       index = i;
     }
-    return index;
+    return { kind: 'verse', index, delta: y - offsets[index] };
   }, []);
 
   // Switching tabs swaps the text under the reader, and the English and the
@@ -407,24 +455,26 @@ export default function HomeScreen() {
   const handleModeChange = useCallback(
     (newMode: DisplayMode) => {
       if (newMode === mode) return;
-      const index = topVerseIndex();
-      claimRestore({ kind: 'verse', index });
+      const anchor = topAnchor();
+      claimRestore(anchor);
       verseOffsetsRef.current = []; // every offset is about to change
-      // If the Aramaic still has to be fetched, hold the anchor until it lands.
-      reanchorRef.current = newMode === 'targum' && !targumVerses ? index : null;
+      // If the translation still has to be fetched, hold the anchor until it lands.
+      const mustFetch =
+        (newMode === 'targum' && !targumVerses) || (newMode === 'russian' && !russianVerses);
+      reanchorRef.current = mustFetch ? anchor : null;
       setMode(newMode);
       saveMode(newMode);
     },
-    [mode, targumVerses, topVerseIndex],
+    [mode, targumVerses, russianVerses, topAnchor],
   );
 
   // Onkelos arrived and pushed every verse down — go back to the anchor.
   useEffect(() => {
-    if (!targumVerses || reanchorRef.current === null) return;
-    claimRestore({ kind: 'verse', index: reanchorRef.current });
+    if ((!targumVerses && !russianVerses) || reanchorRef.current === null) return;
+    claimRestore(reanchorRef.current);
     verseOffsetsRef.current = [];
     reanchorRef.current = null;
-  }, [targumVerses]);
+  }, [targumVerses, russianVerses]);
 
   const handleRiteChange = useCallback((newRite: Rite) => {
     setRite(newRite);
@@ -457,6 +507,24 @@ export default function HomeScreen() {
       })
       .finally(() => {
         if (shownRefRef.current === ref) setTargumLoading(false);
+      });
+  }, [effectiveMode, reading]);
+
+  // The same for the Russian, on the same terms.
+  useEffect(() => {
+    if (effectiveMode !== 'russian' || !reading) return;
+    const ref = reading.ref;
+    if (russianReqRef.current === ref) return;
+    russianReqRef.current = ref;
+    setRussianLoading(true);
+    fetchRussianForReading(reading)
+      .then(texts => {
+        if (shownRefRef.current !== ref) return;
+        if (texts) setRussianVerses(texts);
+        else setRussianFailed(true);
+      })
+      .finally(() => {
+        if (shownRefRef.current === ref) setRussianLoading(false);
       });
   }, [effectiveMode, reading]);
 
@@ -566,14 +634,27 @@ export default function HomeScreen() {
     if (pending.kind === 'offset') {
       target = pending.y;
     } else {
-      const y = verseOffsetsRef.current[pending.index];
+      const offsets = verseOffsetsRef.current;
+      const y = offsets[pending.index];
       if (y === undefined) return; // that verse hasn't been laid out yet
-      target = Math.max(0, y - 8); // a little air above the verse number
+      // The verse may be shorter in the new language; never carry the reader
+      // past its end into the next one.
+      const next = offsets[pending.index + 1];
+      const delta = next !== undefined ? Math.min(pending.delta, next - y - 1) : pending.delta;
+      target = Math.max(0, y + delta);
     }
     const max = Math.max(0, contentHeightRef.current - viewportRef.current);
     scrollRef.current.scrollTo({ y: Math.min(target, max), animated: false });
     if (target <= max) {
-      endRestore();
+      // Reached — but hold on briefly rather than letting go at once. Layout
+      // lands in stages: each paragraph is floored a point taller a frame
+      // after it first lays out (useFullTextHeight), which, summed over every
+      // verse above the reader, used to drift them down the page right after
+      // a switch. Re-applying on each layout until things settle absorbs that,
+      // and keeps the scroll events this restore causes from being taken for
+      // the reader's own (which would have saved them as the day's place).
+      if (settleTimer.current) clearTimeout(settleTimer.current);
+      settleTimer.current = setTimeout(endRestore, 400);
       return;
     }
     // Short of the target: the page may still be growing, so try again on the
@@ -609,8 +690,10 @@ export default function HomeScreen() {
   }, []);
 
   const handleCopyVerse = useCallback(
-    async (book: string, verse: Verse, key: string, targumVerse?: Verse) => {
-      await Clipboard.setStringAsync(buildShareText(book, verse, effectiveMode, targumVerse));
+    async (book: string, verse: Verse, key: string, targumVerse?: Verse, russian?: string) => {
+      await Clipboard.setStringAsync(
+        buildShareText(book, verse, effectiveMode, targumVerse, russian),
+      );
       setCopiedKey(key);
       if (copiedTimer.current) clearTimeout(copiedTimer.current);
       copiedTimer.current = setTimeout(() => setCopiedKey(null), 1500);
@@ -748,6 +831,13 @@ export default function HomeScreen() {
   // One leining's portions read as one phrase — "Yom Kippur: Aliyah 6 and
   // Haftarah" — rather than repeating its name for each segment. Different
   // leinings stay separated by the dot.
+  const visibleModes = MODES.filter(
+    ({ key }) =>
+      key === 'bilingual' ||
+      (key === 'targum' && !reading.isHaftarah) ||
+      (key === 'russian' && canRussian),
+  );
+
   const sectionLabel =
     reading.segments.length > 1
       ? groupBy(reading.segments, (s) => s.nameEn)
@@ -793,9 +883,41 @@ export default function HomeScreen() {
         )}
       </View>
 
-      {/* Language Tabs + Reading Time — mode tabs hidden for Haftarah (no Aramaic) */}
+      {/* A reader who reads in Russian is told when today has none, just above
+          the tabs, rather than finding English where they expected Russian. */}
+      {/* Notes about the translation sit here, above the tabs, not in the
+          scrolling text: anything that appears above the verses after they
+          have laid out pushes the reader's place down the page. */}
+      {mode === 'russian' && !canRussian && (
+        <View style={styles.russianNote}>
+          <Text style={styles.russianNoteText}>
+            The Russian translation is not available for today’s entry
+          </Text>
+          <Text style={styles.russianNoteText}>
+            Русский перевод недоступен для сегодняшнего чтения
+          </Text>
+        </View>
+      )}
+      {mode === 'russian' && canRussian && russianFailed && (
+        <View style={styles.russianNote}>
+          <Text style={styles.russianNoteText}>
+            The Russian translation could not be loaded, so this reading is shown with English.
+          </Text>
+        </View>
+      )}
+      {effectiveMode === 'targum' && targumUnavailable && (
+        <View style={styles.russianNote}>
+          <Text style={styles.russianNoteText}>
+            Targum Onkelos is not available for this reading.
+          </Text>
+        </View>
+      )}
+
+      {/* Language Tabs + Reading Time. Aramaic only where there is Onkelos (not
+          for a haftarah), Russian only where the whole day has it; a lone
+          English tab is no choice at all, so then the row shows just the time. */}
       <View style={styles.toggleRow}>
-        {!reading.isHaftarah && MODES.map(({ key, label }) => (
+        {visibleModes.length > 1 && visibleModes.map(({ key, label }) => (
           <Pressable
             key={key}
             style={[styles.toggleBtn, effectiveMode === key && styles.toggleBtnActive]}
@@ -806,6 +928,12 @@ export default function HomeScreen() {
             </Text>
           </Pressable>
         ))}
+        {/* Loading a translation: shown here, not above the verses, so the
+            text doesn't jump when it disappears. */}
+        {((effectiveMode === 'targum' && targumLoading) ||
+          (effectiveMode === 'russian' && russianLoading)) && (
+          <ActivityIndicator size="small" color={BROWN} style={styles.tabSpinner} />
+        )}
         <Text style={styles.readingTime}>~{readingMinutes} min</Text>
       </View>
 
@@ -824,16 +952,9 @@ export default function HomeScreen() {
         onLayout={e => { viewportRef.current = e.nativeEvent.layout.height; }}
         onContentSizeChange={handleContentSizeChange}
       >
-        {effectiveMode === 'targum' && targumLoading && (
-          <ActivityIndicator color={BROWN} style={{ marginBottom: 16 }} />
-        )}
-        {effectiveMode === 'targum' && targumUnavailable && (
-          <Text style={styles.targumNote}>
-            Targum Onkelos is not available for this reading.
-          </Text>
-        )}
         {reading.verses.map((verse, i) => {
           const targumVerse = targumVerses?.[i] ?? undefined;
+          const russianText = effectiveMode === 'russian' ? russianVerses?.[i] : undefined;
           const segIndex = reading.segmentOfVerse[i];
           const segment = reading.segments[segIndex];
           const segmentStarts = i === 0 || reading.segmentOfVerse[i - 1] !== segIndex;
@@ -853,7 +974,7 @@ export default function HomeScreen() {
               ]}
               onAccessibilityAction={e => {
                 if (e.nativeEvent.actionName === 'copy') {
-                  handleCopyVerse(segment.book, verse, `${i}`, targumVerse);
+                  handleCopyVerse(segment.book, verse, `${i}`, targumVerse, russianText);
                 } else if (e.nativeEvent.actionName === 'sefaria') {
                   handleOpenSefaria(segment.book, verse);
                 }
@@ -873,7 +994,7 @@ export default function HomeScreen() {
               )}
               <VerseSwipe
                 copied={copiedKey === `${i}`}
-                onCopy={() => handleCopyVerse(segment.book, verse, `${i}`, targumVerse)}
+                onCopy={() => handleCopyVerse(segment.book, verse, `${i}`, targumVerse, russianText)}
                 onOpen={() => handleOpenSefaria(segment.book, verse)}
               >
                 <View style={styles.verseNumberRow}>
@@ -895,6 +1016,7 @@ export default function HomeScreen() {
                 {effectiveMode === 'targum' && targumVerse && (
                   <SelectableText text={targumVerse.he} style={styles.targumText} />
                 )}
+                {russianText && <SelectableText text={russianText} style={styles.russianText} />}
               </VerseSwipe>
               {i < reading.verses.length - 1 && <View style={styles.verseDivider} />}
             </View>
@@ -943,8 +1065,8 @@ export default function HomeScreen() {
               >
                 Sefaria
               </Text>
-              . This app is not affiliated with Sefaria, the Jewish Publication Society or
-              Metsudah Publications.
+              . This app is not affiliated with Sefaria, the Jewish Publication Society,
+              Metsudah Publications or the Da Project.
             </Text>
           </View>
         </Pressable>
@@ -1322,6 +1444,31 @@ const styles = StyleSheet.create({
     marginBottom: 6,
     fontStyle: 'italic',
   },
+  // The Russian sits where the English does, in its size and colour, but upright:
+  // the English is set in italic as a translation's convention, and Cyrillic
+  // italic changes letterforms (т, и, д) enough to slow a reader down.
+  russianText: {
+    fontSize: 15,
+    lineHeight: 24,
+    color: '#4A3728',
+    textAlign: 'left',
+    marginBottom: 6,
+  },
+  tabSpinner: {
+    marginLeft: 4,
+  },
+  russianNote: {
+    paddingTop: 8,
+    paddingHorizontal: 16,
+    backgroundColor: '#F5EDD8',
+    alignItems: 'center',
+  },
+  russianNoteText: {
+    fontSize: 12,
+    lineHeight: 17,
+    color: MID,
+    textAlign: 'center',
+  },
   targumText: {
     fontFamily: 'TaameyFrank_Regular',
     // Set at the Hebrew's size, and given the Hebrew's line height with it —
@@ -1342,13 +1489,6 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     writingDirection: 'rtl',
     marginBottom: 6,
-  },
-  targumNote: {
-    fontSize: 14,
-    color: MID,
-    textAlign: 'center',
-    fontStyle: 'italic',
-    marginBottom: 16,
   },
   verseDivider: {
     height: 1,
